@@ -384,6 +384,54 @@
       opacity: .9;
     }
 
+
+    .heat-grid-wrap {
+      width:100%;
+      min-height:500px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:#fff;
+      padding:14px;
+      overflow:auto;
+    }
+    .district-grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+      gap:10px;
+    }
+    .district-tile {
+      border:1px solid #e6dfda;
+      border-radius:12px;
+      padding:10px 8px;
+      min-height:74px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      cursor:pointer;
+      transition:transform .08s ease, box-shadow .12s ease, opacity .12s ease;
+      box-shadow:0 2px 8px rgba(0,0,0,.04);
+    }
+    .district-tile:hover {
+      transform: translateY(-1px);
+      box-shadow:0 6px 16px rgba(0,0,0,.08);
+    }
+    .district-tile.active {
+      outline:2px solid var(--brand);
+      outline-offset:1px;
+    }
+    .district-tile .tile-label {
+      font-size:13px;
+      font-weight:700;
+      color:#222;
+      margin-bottom:4px;
+    }
+    .district-tile .tile-value {
+      font-size:12px;
+      color:#333;
+    }
+
 </style>
 
 
@@ -572,6 +620,7 @@
       <div class="heat-map-wrap">
         <div id="heatMapCanvas" class="heat-map-canvas"></div>
       </div>
+      <div id="heatGridWrap" class="heat-grid-wrap" style="display:none;"></div>
       <div class="foot" id="heatMapStatus">County heat map loading… Click a county to filter the dashboard to that county. Click it again to clear.</div>
     </section>
 
@@ -969,6 +1018,101 @@
       if (metric === "other_returned") return Number(row.returnedO || 0);
       return 0;
     }
+    function metricLabelText() {
+      const el = document.getElementById("heatMetricSelect");
+      return el ? el.selectedOptions[0].text.replace("Heat Map Metric: ","") : "";
+    }
+
+    function districtPrefix(dimension) {
+      if (dimension === "USC") return "Congressional District";
+      if (dimension === "STS") return "State Senate District";
+      if (dimension === "STH") return "State House District";
+      return "District";
+    }
+
+    function districtShortPrefix(dimension) {
+      if (dimension === "USC") return "CD";
+      if (dimension === "STS") return "SD";
+      if (dimension === "STH") return "HD";
+      return "D";
+    }
+
+    function colorForMetricValue(value, maxValue, metric) {
+      const safeMax = Math.max(maxValue || 0, 1);
+      const ratio = Math.max(0, Math.min(1, Number(value || 0) / safeMax));
+
+      if (metric === "return_rate") {
+        if (ratio < 0.33) return "#f5b6ad";
+        if (ratio < 0.66) return "#f3e7a6";
+        return "#bfe3bf";
+      }
+
+      if (ratio < 0.2) return "#f5e8e5";
+      if (ratio < 0.4) return "#e7c8bf";
+      if (ratio < 0.6) return "#cf8f7f";
+      if (ratio < 0.8) return "#b75b46";
+      return "#8d0d0d";
+    }
+
+    function renderDistrictHeatGrid() {
+      const statusEl = document.getElementById("heatMapStatus");
+      const mapWrap = document.getElementById("heatMapCanvas");
+      const gridWrap = document.getElementById("heatGridWrap");
+      const metric = document.getElementById("heatMetricSelect").value;
+
+      destroyHeatMapChart();
+      if (mapWrap) mapWrap.style.display = "none";
+      if (gridWrap) gridWrap.style.display = "block";
+
+      const aggregated = aggregateByDimension(state.rawRows, state.dimension)
+        .filter(r => String(r.label || "").trim() !== "")
+        .sort((a, b) => Number(a.label) - Number(b.label));
+
+      const maxValue = Math.max(...aggregated.map(r => getHeatMetricValue(r, metric)), 0);
+      const prefix = districtPrefix(state.dimension);
+      const shortPrefix = districtShortPrefix(state.dimension);
+      const selectedLabel = state.search && state.dimension !== "County" ? state.search : "";
+
+      const metricLabel = metricLabelText();
+      if (!aggregated.length) {
+        gridWrap.innerHTML = "<div style='padding:30px; text-align:center; color:#666;'>No district values available under the current filters.</div>";
+        statusEl.textContent = `No district values were available for ${metricLabel.toLowerCase()} under the current filters.`;
+        return;
+      }
+
+      const cards = aggregated.map(r => {
+        const value = getHeatMetricValue(r, metric);
+        const bg = colorForMetricValue(value, maxValue, metric);
+        const isRate = metric === "return_rate";
+        const displayValue = isRate ? `${Number(value || 0).toFixed(1)}%` : formatNum(value);
+        const activeClass = selectedLabel === r.label ? " active" : "";
+        return `
+          <div class="district-tile${activeClass}" data-label="${escapeAttr(r.label)}" style="background:${bg};">
+            <div class="tile-label">${shortPrefix} ${r.label}</div>
+            <div class="tile-value">${displayValue}</div>
+          </div>`;
+      }).join("");
+
+      gridWrap.innerHTML = `<div class="district-grid">${cards}</div>`;
+      statusEl.textContent = `Showing ${prefix.toLowerCase()} heat grid for ${metricLabel.toLowerCase()} using the current dashboard filters. Click a district to filter the dashboard.`;
+
+      gridWrap.querySelectorAll(".district-tile").forEach(tile => {
+        tile.addEventListener("click", () => {
+          const clickedLabel = tile.getAttribute("data-label") || "";
+          if (!clickedLabel) return;
+
+          if (state.search === clickedLabel && state.dimension !== "County") {
+            state.search = "";
+            selectedHeatCounty = "";
+            document.getElementById("searchBox").value = "";
+          } else {
+            state.search = clickedLabel;
+            document.getElementById("searchBox").value = clickedLabel;
+          }
+          refreshView();
+        });
+      });
+    }
 
     async function ensureCountyGeojsonLoaded() {
       if (paCountyGeojson) return paCountyGeojson;
@@ -1000,13 +1144,20 @@
     async function renderHeatMap() {
       const statusEl = document.getElementById("heatMapStatus");
       const container = document.getElementById("heatMapCanvas");
+      const gridWrap = document.getElementById("heatGridWrap");
       const tooltip = document.getElementById("heatTooltip");
       if (!statusEl || !container || !window.d3) return;
 
       if (state.dimension !== "County") {
-        destroyHeatMapChart();
-        statusEl.textContent = "Heat map is available for County view only right now. Switch the geography filter to County to see the Pennsylvania map.";
+        if (tooltip) tooltip.style.display = "none";
+        renderDistrictHeatGrid();
         return;
+      }
+
+      if (container) container.style.display = "block";
+      if (gridWrap) {
+        gridWrap.style.display = "none";
+        gridWrap.innerHTML = "";
       }
 
       try {

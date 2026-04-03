@@ -215,6 +215,12 @@
       text-align:center;
     }
     .breakdown-mini {
+      }
+      canvas {
+      }
+      .chartjs-legend ul {
+        text-align:left !important;
+      }
       height:190px;
     }
     .legend-note {
@@ -439,7 +445,13 @@
       .brand-title { font-size:28px; }
       .hero h1 { font-size:34px; }
       .breakdown-grid { grid-template-columns:1fr; }
-      .breakdown-mini { height:220px; }
+      .breakdown-mini {
+      }
+      canvas {
+      }
+      .chartjs-legend ul {
+        text-align:left !important;
+      } height:220px; }
     }
   </style>
 </head>
@@ -562,13 +574,13 @@
       <div style="overflow:auto;">
         <table id="statewidePartySummaryTable" style="min-width:420px;">
           <thead>
-            <tr>
-              <th>Party</th>
-              <th class="num">Total Applied</th>
-              <th class="num">Total Returned</th>
-              
-            </tr>
-          </thead>
+              <tr>
+                <th>Party</th>
+                <th class="num">Total Applied</th>
+                <th class="num">Total Returned</th>
+                <th class="num">Return Rate</th>
+              </tr>
+            </thead>
           <tbody>
             <tr>
               <td>Democrats</td>
@@ -659,7 +671,7 @@
       </section>
 
       <section class="card section">
-        <h2>Statewide Breakdown by Party, Gender and Age</h2>
+        <h2><span style="font-size:18px; font-weight:700;">Statewide Breakdown by Party, Gender and Age</span></h2>
         <p>Compact statewide views for party, gender, and age. Hover over any row in the data table to see a quick party popup for that geography.</p>
         <div class="breakdown-grid">
           <div class="breakdown-item">
@@ -1148,7 +1160,7 @@
         cutout: "68%",
         plugins: {
           legend: {
-            position: "bottom",
+            position: "bottom", align: "start",
             labels: {
               usePointStyle: true,
               boxWidth: 10,
@@ -1184,7 +1196,7 @@
         cutout: "68%",
         plugins: {
           legend: {
-            position: "bottom",
+            position: "bottom", align: "start",
             labels: {
               usePointStyle: true,
               boxWidth: 10,
@@ -1222,7 +1234,7 @@
         cutout: "68%",
         plugins: {
           legend: {
-            position: "bottom",
+            position: "bottom", align: "start",
             labels: {
               usePointStyle: true,
               boxWidth: 10,
@@ -1333,7 +1345,7 @@
         animation: false,
         plugins: {
           legend: {
-            position: "bottom",
+            position: "bottom", align: "start",
             labels: {
               usePointStyle: true,
               boxWidth: 10,

@@ -485,18 +485,24 @@
     <section class="card section">
       <h2 id="tableTitle">County Detail Table</h2>
       <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
+      <div class="toolbar" style="margin-top:-4px; margin-bottom:14px;">
+        <div class="toggle-group">
+          <button id="detailAppliedBtn" class="active" type="button">Applied View</button>
+          <button id="detailReturnedBtn" type="button">Returned View</button>
+        </div>
+      </div>
       <div class="table-wrap">
         <table id="detailTable">
           <thead>
             <tr>
               <th id="firstColHeader">County</th>
-              <th class="num">Democrats</th>
+              <th class="num" id="detailColDem">Democrats</th>
               <th class="num">Dem %</th>
-              <th class="num">Other</th>
+              <th class="num" id="detailColOther">Other</th>
               <th class="num">Other %</th>
-              <th class="num">Republicans</th>
+              <th class="num" id="detailColRep">Republicans</th>
               <th class="num">Rep %</th>
-              <th class="num">Total</th>
+              <th class="num" id="detailColTotal">Total</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -533,6 +539,7 @@
       ballotView: "all",
       partyFilter: "ALL",
       pinnedPartyBreakRow: null,
+      detailTableMode: "applied",
       dailyDelta: {
         applied: 0,
         returned: 0,
@@ -622,17 +629,63 @@
     }
 
     function aggregateByDimension(rows, dimension) {
-      const filteredRows = getViewFilteredRows(rows);
+      const filteredRows = rows.filter(r => state.partyFilter === "ALL" ? true : r.Party === state.partyFilter);
       const map = new Map();
+
       filteredRows.forEach(r => {
         const key = normalizeLabel(r[dimension]);
         if (!key) return;
-        if (!map.has(key)) map.set(key, { label:key, D:0, O:0, R:0, Total:0 });
+        if (!map.has(key)) {
+          map.set(key, {
+            label: key,
+            appliedD: 0, appliedO: 0, appliedR: 0, appliedTotal: 0,
+            returnedD: 0, returnedO: 0, returnedR: 0, returnedTotal: 0
+          });
+        }
         const item = map.get(key);
-        item[r.Party] += r.Voters;
-        item.Total += r.Voters;
+
+        if (isAppliedRow(r)) {
+          if (r.Party === "D") item.appliedD += r.Voters;
+          if (r.Party === "O") item.appliedO += r.Voters;
+          if (r.Party === "R") item.appliedR += r.Voters;
+          item.appliedTotal += r.Voters;
+        }
+
+        if (isReturnedRow(r)) {
+          if (r.Party === "D") item.returnedD += r.Voters;
+          if (r.Party === "O") item.returnedO += r.Voters;
+          if (r.Party === "R") item.returnedR += r.Voters;
+          item.returnedTotal += r.Voters;
+        }
       });
-      return Array.from(map.values());
+
+      return Array.from(map.values()).map(item => {
+        if (state.ballotView === "returned") {
+          return {
+            ...item,
+            D: item.returnedD,
+            O: item.returnedO,
+            R: item.returnedR,
+            Total: item.returnedTotal
+          };
+        }
+        if (state.ballotView === "applied") {
+          return {
+            ...item,
+            D: item.appliedD,
+            O: item.appliedO,
+            R: item.appliedR,
+            Total: item.appliedTotal
+          };
+        }
+        return {
+          ...item,
+          D: item.appliedD + item.returnedD,
+          O: item.appliedO + item.returnedO,
+          R: item.appliedR + item.returnedR,
+          Total: item.appliedTotal + item.returnedTotal
+        };
+      });
     }
 
     function compareGeoLabels(a, b, dimension, direction = "asc") {
@@ -903,10 +956,19 @@
       document.getElementById("tableTitle").textContent = meta.title;
       const viewText = state.ballotView === "all" ? "all voters" : (state.ballotView === "returned" ? "returned ballots" : "applied ballots");
       const partyText = state.partyFilter === "ALL" ? "all parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
-      document.getElementById("tableSubtitle").textContent = `Rows update automatically based on ${meta.label}, ${viewText}, and ${partyText}.`;
+      const detailModeText = state.detailTableMode === "returned" ? "returned counts" : "applied counts";
+      document.getElementById("tableSubtitle").textContent = `Rows update automatically based on ${meta.label}, ${viewText}, ${partyText}, and currently show ${detailModeText}.`;
       document.getElementById("searchBox").placeholder = meta.searchPlaceholder;
       document.getElementById("groupCountLabel").textContent = meta.groupLabel;
       document.getElementById("groupCountValue").textContent = formatNum(aggregateByDimension(state.rawRows, state.dimension).length);
+
+      document.getElementById("detailColDem").textContent = state.detailTableMode === "returned" ? "Dem Returned" : "Dem Applied";
+      document.getElementById("detailColOther").textContent = state.detailTableMode === "returned" ? "Other Returned" : "Other Applied";
+      document.getElementById("detailColRep").textContent = state.detailTableMode === "returned" ? "Rep Returned" : "Rep Applied";
+      document.getElementById("detailColTotal").textContent = state.detailTableMode === "returned" ? "Total Returned" : "Total Applied";
+
+      document.getElementById("detailAppliedBtn").classList.toggle("active", state.detailTableMode === "applied");
+      document.getElementById("detailReturnedBtn").classList.toggle("active", state.detailTableMode === "returned");
     }
 
     function updateCards() {
@@ -939,24 +1001,30 @@
     function renderTable(rows) {
       const tbody = document.querySelector("#detailTable tbody");
       tbody.innerHTML = rows.map(r => {
-        const demPct = r.Total ? ((r.D / r.Total) * 100).toFixed(1) : "0.0";
-        const otherPct = r.Total ? ((r.O / r.Total) * 100).toFixed(1) : "0.0";
-        const repPct = r.Total ? ((r.R / r.Total) * 100).toFixed(1) : "0.0";
+        const dVal = state.detailTableMode === "returned" ? (r.returnedD || 0) : (r.appliedD || 0);
+        const oVal = state.detailTableMode === "returned" ? (r.returnedO || 0) : (r.appliedO || 0);
+        const rVal = state.detailTableMode === "returned" ? (r.returnedR || 0) : (r.appliedR || 0);
+        const totalVal = state.detailTableMode === "returned" ? (r.returnedTotal || 0) : (r.appliedTotal || 0);
+
+        const demPct = totalVal ? ((dVal / totalVal) * 100).toFixed(1) : "0.0";
+        const otherPct = totalVal ? ((oVal / totalVal) * 100).toFixed(1) : "0.0";
+        const repPct = totalVal ? ((rVal / totalVal) * 100).toFixed(1) : "0.0";
+
         return `
           <tr class="detail-row"
               data-label="${escapeAttr(r.label)}"
-              data-d="${r.D}"
-              data-o="${r.O}"
-              data-r="${r.R}"
-              data-total="${r.Total}">
+              data-d="${dVal}"
+              data-o="${oVal}"
+              data-r="${rVal}"
+              data-total="${totalVal}">
             <td>${r.label}</td>
-            <td class="num">${formatNum(r.D)}</td>
+            <td class="num">${formatNum(dVal)}</td>
             <td class="num">${demPct}%</td>
-            <td class="num">${formatNum(r.O)}</td>
+            <td class="num">${formatNum(oVal)}</td>
             <td class="num">${otherPct}%</td>
-            <td class="num">${formatNum(r.R)}</td>
+            <td class="num">${formatNum(rVal)}</td>
             <td class="num">${repPct}%</td>
-            <td class="num total">${formatNum(r.Total)}</td>
+            <td class="num total">${formatNum(totalVal)}</td>
           </tr>`;
       }).join("");
     }
@@ -1068,6 +1136,14 @@
       state.mode = "grouped";
       document.getElementById("groupedBtn").classList.add("active");
       document.getElementById("stackedBtn").classList.remove("active");
+      refreshView();
+    });
+    document.getElementById("detailAppliedBtn").addEventListener("click", () => {
+      state.detailTableMode = "applied";
+      refreshView();
+    });
+    document.getElementById("detailReturnedBtn").addEventListener("click", () => {
+      state.detailTableMode = "returned";
       refreshView();
     });
     document.getElementById("printReportBtn").addEventListener("click", () => window.print());

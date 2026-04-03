@@ -900,7 +900,7 @@
             grid: { display: false }
           },
           y: {
-            beginAtZero: false,
+            beginAtZero: true,
             ticks: {
               color: "#555",
               callback: function(value) {
@@ -1019,29 +1019,6 @@
       } catch (error) {
         console.error(error);
         setStatus(`Last updated: unavailable. Error loading DataTable.xlsx`);
-      }
-    } else {
-          setStatus(`Last updated: unavailable (no timestamp from server)`);
-        }
-
-      } catch (error) {
-        console.error(error);
-        setStatus(`Last updated: unavailable. Error loading DataTable.xlsx`);
-      }
-    }</strong>…`);
-        const response = await fetch(DATA_FILE_URL, { cache: "no-store" });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const arrayBuffer = await response.arrayBuffer();
-        const rows = parseWorkbookArrayBuffer(arrayBuffer);
-        if (!rows.length) throw new Error("No usable rows found in workbook.");
-        state.rawRows = rows;
-        state.overallTotals = computeOverallTotals(rows);
-        refreshView();
-        const now = new Date();
-        setStatus(`Last refreshed: <strong>${now.toLocaleString()}</strong>`);
-      } catch (error) {
-        console.error(error);
-        setStatus(`Last refreshed: unavailable. Could not load the hosted workbook. Make sure <strong>DataTable.xlsx</strong> is publicly reachable in the same hosted folder as this HTML file. Error: ${error.message}`);
       }
     }
 

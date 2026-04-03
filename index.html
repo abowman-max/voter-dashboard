@@ -22,6 +22,7 @@
     }
     * { box-sizing:border-box; }
     body {
+      zoom: 0.75;
       margin:0;
       font-family: Arial, Helvetica, sans-serif;
       color:var(--ink);
@@ -288,20 +289,15 @@
     @media print {
       @page {
         size: letter portrait;
-        margin: 0.45in;
-      }
-      html, body {
-        background:#fff !important;
-        color:#000 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+        margin: 0.5in;
       }
       body {
-        font-size: 11px !important;
+      zoom: 0.75;
+        background:#fff !important;
       }
       .page {
-        max-width:none !important;
-        padding:0 !important;
+        max-width:none;
+        padding:0;
       }
       .screen-only {
         display:none !important;
@@ -309,106 +305,65 @@
       .print-only {
         display:block !important;
       }
-      .hero {
-        padding:0 !important;
-        display:block !important;
-        margin-bottom:10px !important;
-      }
-      .hero-logo,
-      .toolbar,
-      #printReportBtn,
-      #loadLocalBtn,
-      .toggle-group,
-      #dailyChangeChart,
-      #mainChart,
-      #donutChart {
-        display:none !important;
-      }
-      .card, .section, .stats, .grid, .table-wrap, .hero {
+      .card, .section, .hero, .stats, .grid, .table-wrap {
         box-shadow:none !important;
         border:0 !important;
         background:#fff !important;
       }
-      .hero h1 {
-        font-size:20px !important;
-        margin:0 0 4px 0 !important;
-        color:#000 !important;
+      .hero {
+        padding:0 0 12px 0 !important;
+        display:block !important;
       }
-      .hero p {
-        display:none !important;
-      }
-      .status-line {
+      .hero-logo {
         display:none !important;
       }
       .stats {
-        display:none !important;
+        display:grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap:10px !important;
+        margin: 0 0 14px 0 !important;
+      }
+      .stat {
+        padding:10px 12px !important;
+        border:1px solid #ccc !important;
+        border-radius:10px !important;
+      }
+      .stat .value {
+        font-size:20px !important;
+        color:#000 !important;
+      }
+      .stat .label {
+        color:#444 !important;
       }
       .grid {
         display:block !important;
       }
       .section {
         padding:0 !important;
-        margin:0 0 12px 0 !important;
+        margin:0 0 16px 0 !important;
       }
-      .section h2 {
-        font-size:15px !important;
-        color:#000 !important;
-        margin:0 0 6px 0 !important;
-      }
-      .section p {
-        font-size:11px !important;
-        color:#333 !important;
-        margin:0 0 8px 0 !important;
-      }
-      .mini-chart,
-      .chart-wrap {
-        display:none !important;
-        height:0 !important;
-      }
-      .legend-note,
-      .foot {
-        font-size:10px !important;
-        color:#444 !important;
-      }
-      .table-wrap {
-        overflow:visible !important;
-        border:0 !important;
-        border-radius:0 !important;
+      .chart-wrap, .mini-chart {
+        height:260px !important;
+        page-break-inside:avoid;
       }
       table {
-        width:100% !important;
         min-width:0 !important;
-        border-collapse:collapse !important;
-        table-layout:fixed !important;
-        page-break-inside:auto;
-      }
-      thead {
-        display:table-header-group !important;
-      }
-      tr, td, th {
-        page-break-inside:avoid !important;
+        font-size:11px !important;
       }
       thead th {
         position:static !important;
-        background:#efefef !important;
-        color:#000 !important;
-        font-size:10px !important;
-        border:1px solid #cfcfcf !important;
-        padding:6px 6px !important;
-      }
-      tbody td {
-        border:1px solid #dddddd !important;
-        padding:5px 6px !important;
-        font-size:10px !important;
-        color:#000 !important;
-        word-wrap:break-word !important;
-      }
-      td.total {
-        font-weight:700 !important;
+        background:#f2f2f2 !important;
         color:#000 !important;
       }
-      #detailTable tbody tr:nth-child(even) {
-        background:#fafafa !important;
+      tbody td, thead th {
+        padding:6px 8px !important;
+        border:1px solid #ddd !important;
+      }
+      .foot, .status-line {
+        color:#444 !important;
+      }
+      #detailTable tbody tr {
+        page-break-inside:avoid;
       }
     }
     @media (max-width:1080px) {
@@ -437,49 +392,8 @@
         <div id="printUpdatedLine" style="font-size:12px; color:#333;"></div>
       </div>
     </section>
-    <section class="print-only" id="printSummaryBlock" style="margin-bottom:14px;">
-      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px;">
-        <div style="border:1px solid #cfcfcf; border-radius:10px; padding:10px 12px;">
-          <div style="font-size:11px; color:#555; text-transform:uppercase; letter-spacing:.06em;">Democrats</div>
-          <div id="printDemTotal" style="font-size:22px; font-weight:700; color:#000; margin-top:4px;">—</div>
-        </div>
-        <div style="border:1px solid #cfcfcf; border-radius:10px; padding:10px 12px;">
-          <div style="font-size:11px; color:#555; text-transform:uppercase; letter-spacing:.06em;">Other</div>
-          <div id="printOtherTotal" style="font-size:22px; font-weight:700; color:#000; margin-top:4px;">—</div>
-        </div>
-        <div style="border:1px solid #cfcfcf; border-radius:10px; padding:10px 12px;">
-          <div style="font-size:11px; color:#555; text-transform:uppercase; letter-spacing:.06em;">Republicans</div>
-          <div id="printRepTotal" style="font-size:22px; font-weight:700; color:#000; margin-top:4px;">—</div>
-        </div>
-        <div style="border:1px solid #cfcfcf; border-radius:10px; padding:10px 12px;">
-          <div style="font-size:11px; color:#555; text-transform:uppercase; letter-spacing:.06em;">Total Voters</div>
-          <div id="printGrandTotal" style="font-size:22px; font-weight:700; color:#000; margin-top:4px;">—</div>
-        </div>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-        <div style="border:1px solid #d8d8d8; border-radius:12px; padding:12px;">
-          <div style="font-size:15px; font-weight:700; margin-bottom:8px;">Daily Change</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div style="border:1px solid #e3e3e3; border-radius:10px; padding:10px;">
-              <div style="font-size:11px; color:#555; text-transform:uppercase;">New Applications</div>
-              <div id="printDailyApplied" style="font-size:20px; font-weight:700; margin-top:4px;">—</div>
-            </div>
-            <div style="border:1px solid #e3e3e3; border-radius:10px; padding:10px;">
-              <div style="font-size:11px; color:#555; text-transform:uppercase;">New Returns</div>
-              <div id="printDailyReturned" style="font-size:20px; font-weight:700; margin-top:4px;">—</div>
-            </div>
-          </div>
-        </div>
-        <div style="border:1px solid #d8d8d8; border-radius:12px; padding:12px;">
-          <div style="font-size:15px; font-weight:700; margin-bottom:8px;">Report Notes</div>
-          <div id="printNotesLine" style="font-size:12px; color:#333; line-height:1.45;">
-            Filtered view prepared for print.
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <section class="card hero screen-only">
+    <section class="card hero">
       <div class="hero-logo">
         <img src="https://static.wixstatic.com/media/b45117_afe41d8982634f35a4af7e1de54101cf~mv2.jpeg/v1/crop/x_0%2Cy_27%2Cw_828%2Ch_332/fill/w_828%2Ch_332%2Cal_c%2Cq_80%2Cenc_avif%2Cquality_auto/TSS%20Logo%20copy.jpeg" alt="Targeted Strategic Solutions logo" />
       </div>
@@ -492,7 +406,7 @@
       </div>
     </section>
 
-    <section class="stats screen-only">
+    <section class="stats">
       <div class="card stat">
         <div class="label" id="groupCountLabel">Groups</div>
         <div class="value" id="groupCountValue">—</div>
@@ -515,7 +429,7 @@
       </div>
     </section>
 
-    <section class="card section screen-only" style="margin-bottom:22px;">
+    <section class="card section" style="margin-bottom:22px;">
       <h2>Daily Change</h2>
       <p>New ballot activity since the previous day’s file. This compares the current <strong>DataTable.xlsx</strong> against a hosted <strong>PreviousDataTable.xlsx</strong>.</p>
       <div class="grid" style="grid-template-columns: 1.2fr .8fr; gap:18px;">
@@ -538,7 +452,7 @@
       <div class="foot" id="dailyChangeStatus">Daily change comparison not loaded yet.</div>
     </section>
 
-    <div class="grid screen-only">
+    <div class="grid">
       <section class="card section">
         <h2>Comparison View</h2>
         <p>Use the dropdowns to switch geography, toggle between applied and returned ballot views, and filter by party.</p>
@@ -580,7 +494,7 @@
             <button id="stackedBtn" class="active" type="button">Stacked</button>
             <button id="groupedBtn" type="button">Grouped</button>
           </div>
-          <button id="printReportBtn" type="button">Print / Save PDF Report</button>
+          <button id="printReportBtn" type="button">Print PDF Report</button>
         </div>
 
         <div class="chart-wrap">
@@ -1188,26 +1102,10 @@
       const partyText = state.partyFilter === "ALL" ? "All Parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
       const sortLabel = document.getElementById("sortSelect").options[document.getElementById("sortSelect").selectedIndex].text;
       const updatedText = document.getElementById("dataStatus").textContent.trim();
-      const visibleTotals = computeVisibleTotals();
 
       document.getElementById("printContextLine").textContent =
         `${meta.label} | ${ballotText} | ${partyText} | ${sortLabel}`;
       document.getElementById("printUpdatedLine").textContent = updatedText;
-
-      document.getElementById("printDemTotal").textContent = formatNum(visibleTotals.D);
-      document.getElementById("printOtherTotal").textContent = formatNum(visibleTotals.O);
-      document.getElementById("printRepTotal").textContent = formatNum(visibleTotals.R);
-      document.getElementById("printGrandTotal").textContent = formatNum(visibleTotals.Total);
-
-      const appliedText = (state.dailyDelta.applied > 0 ? "+" : "") + formatNum(state.dailyDelta.applied);
-      const returnedText = (state.dailyDelta.returned > 0 ? "+" : "") + formatNum(state.dailyDelta.returned);
-      document.getElementById("printDailyApplied").textContent = appliedText;
-      document.getElementById("printDailyReturned").textContent = returnedText;
-
-      const notes = state.dailyDelta.hasPrevious
-        ? `This report reflects the currently displayed filtered view. Daily change is compared against PreviousDataTable.xlsx.`
-        : `This report reflects the currently displayed filtered view. No previous-day comparison file was available at print time.`;
-      document.getElementById("printNotesLine").textContent = notes;
     }
 
     function printReport() {

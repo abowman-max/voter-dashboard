@@ -1121,7 +1121,10 @@
         const aggregated = aggregateByDimension(state.rawRows, dimension);
         const valueMap = new Map();
         aggregated.forEach(row => {
-          valueMap.set(normalizeLabel(row.label), getHeatMetricValue(row, metric));
+          const key = dimension === "County"
+            ? normalizeCountyMapLabel(row.label)
+            : normalizeLabel(row.label);
+          valueMap.set(key, getHeatMetricValue(row, metric));
         });
 
         destroyHeatMapChart();

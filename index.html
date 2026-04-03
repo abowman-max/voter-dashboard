@@ -642,71 +642,7 @@
       </section>
     </div>
 
-    <section class="card section" style="margin-top:22px; width:100%;">
-      <h2 id="tableTitle">County Detail Table</h2>
-      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
-      <div class="table-wrap" style="width:100%;">
-        <table id="detailTable">
-          <thead>
-            <tr>
-              <th id="firstColHeader">County</th>
-              <th class="num">Democrats</th>
-              <th class="num">Dem %</th>
-              <th class="num">Other</th>
-              <th class="num">Other %</th>
-              <th class="num">Republicans</th>
-              <th class="num">Rep %</th>
-              <th class="num">Total</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div class="foot">
-        
-        <button class="btn-link" id="loadLocalBtn" type="button"></button>.
-        <input class="hidden-file-input" id="localFileInput" type="file" accept=".xlsx,.xls" />
-      </div>
-    </section>
-  </div>
-
-  <div id="rowPiePopup" class="row-pie-popup">
-    <div id="rowPiePopupTitle" class="popup-title">Party Breakdown</div>
-    <div id="rowPiePopupSubtitle" class="popup-subtitle"></div>
-    <div class="popup-chart-wrap">
-      <canvas id="rowPiePopupCanvas"></canvas>
-    </div>
-  </div>
-
-    
-    <section class="card section" style="margin-bottom:22px; width:100%;">
-      <h2><span style="font-size:18px; font-weight:700;">Statewide Breakdown by Party, Gender and Age</span></h2>
-      <p>Compact statewide views for party, gender, and age. Hover over any row in the data table to see a quick party popup for that geography.</p>
-      <div class="breakdown-grid">
-        <div class="breakdown-item">
-          <div class="breakdown-label">Party</div>
-          <div class="mini-chart breakdown-mini">
-            <canvas id="donutChart"></canvas>
-          </div>
-        </div>
-        <div class="breakdown-item">
-          <div class="breakdown-label">Gender</div>
-          <div class="mini-chart breakdown-mini">
-            <canvas id="genderChart"></canvas>
-          </div>
-        </div>
-        <div class="breakdown-item">
-          <div class="breakdown-label">Age</div>
-          <div class="mini-chart breakdown-mini">
-            <canvas id="ageChart"></canvas>
-          </div>
-        </div>
-      </div>
-      <div class="foot" id="partyBreakStatus">Showing statewide party, gender, and age breakdowns.</div>
-    </section>
-
-<div class="grid">
-      <section class="card section">
+    <section class="card section">
         <h2>Comparison View</h2>
         <p>Use the dropdowns to switch geography, choose all voters or ballot activity views, and filter by party.</p>
 
@@ -762,6 +698,45 @@
         </div>
       </section>
 
+      
+<section class="card section" style="margin-top:22px; margin-bottom:0; width:100%;">
+      <h2 id="tableTitle">County Detail Table</h2>
+      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
+      <div class="table-wrap" style="width:100%; max-width:100%;">
+        <table id="detailTable">
+          <thead>
+            <tr>
+              <th id="firstColHeader">County</th>
+              <th class="num">Democrats</th>
+              <th class="num">Dem %</th>
+              <th class="num">Other</th>
+              <th class="num">Other %</th>
+              <th class="num">Republicans</th>
+              <th class="num">Rep %</th>
+              <th class="num">Total</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="foot">
+        
+        <button class="btn-link" id="loadLocalBtn" type="button"></button>.
+        <input class="hidden-file-input" id="localFileInput" type="file" accept=".xlsx,.xls" />
+      </div>
+    </section>
+  </div>
+
+  <div id="rowPiePopup" class="row-pie-popup">
+    <div id="rowPiePopupTitle" class="popup-title">Party Breakdown</div>
+    <div id="rowPiePopupSubtitle" class="popup-subtitle"></div>
+    <div class="popup-chart-wrap">
+      <canvas id="rowPiePopupCanvas"></canvas>
+    </div>
+  </div>
+
+    
+    <div class="grid">
       <section class="card section">
         <h2><span style="font-size:18px; font-weight:700;">Statewide Breakdown by Party, Gender and Age</span></h2>
         <p>Compact statewide views for party, gender, and age. Hover over any row in the data table to see a quick party popup for that geography.</p>

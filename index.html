@@ -6,7 +6,7 @@
   <title>TSS MIB Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-geo@4.3.6/build/index.umd.min.js"></script>
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -361,6 +361,29 @@
       height:100%;
     }
 
+
+    .heat-tooltip {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      background: rgba(35,35,35,.94);
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.35;
+      display: none;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+      max-width: 240px;
+    }
+    .heat-county {
+      cursor: pointer;
+      transition: opacity .12s ease;
+    }
+    .heat-county:hover {
+      opacity: .9;
+    }
+
 </style>
 
 
@@ -637,6 +660,8 @@
     <div id="rowPiePopupSubtitle" class="popup-subtitle"></div>
     <div class="popup-chart-wrap"><canvas id="rowPiePopupCanvas"></canvas></div>
   </div>
+
+  <div id="heatTooltip" class="heat-tooltip"></div>
 
   <script>
     const DATA_FILE_URL = "./DataTable.xlsx";
@@ -968,20 +993,18 @@
 
     function destroyHeatMapChart() {
       const container = document.getElementById("heatMapCanvas");
-      if (container && window.Plotly) {
-        try { Plotly.purge(container); } catch (e) {}
-      }
+      if (container) container.innerHTML = "";
       heatMapChart = null;
     }
 
     async function renderHeatMap() {
       const statusEl = document.getElementById("heatMapStatus");
       const container = document.getElementById("heatMapCanvas");
-      if (!statusEl || !container) return;
+      const tooltip = document.getElementById("heatTooltip");
+      if (!statusEl || !container || !window.d3) return;
 
       if (state.dimension !== "County") {
         destroyHeatMapChart();
-        container.innerHTML = "";
         statusEl.textContent = "Heat map is available for County view only right now. Switch the geography filter to County to see the Pennsylvania map.";
         return;
       }
@@ -992,102 +1015,94 @@
         const geojson = await ensureCountyGeojsonLoaded();
         const aggregated = aggregateByDimension(state.rawRows, "County");
 
-        const fips = [];
-        const zvals = [];
-        const labels = [];
-
-        (geojson.features || []).forEach(feature => {
-          const countyName = normalizeCountyMapLabel(feature.properties?.name || "");
-          const row = aggregated.find(r => normalizeCountyMapLabel(r.label) === countyName);
-          const value = row ? getHeatMetricValue(row, metric) : 0;
-          fips.push(String(feature.id));
-          zvals.push(Number(value || 0));
-          labels.push(feature.properties?.name || countyName);
+        const valueMap = new Map();
+        aggregated.forEach(row => {
+          valueMap.set(normalizeCountyMapLabel(row.label), getHeatMetricValue(row, metric));
         });
 
         destroyHeatMapChart();
 
-        const metricLabel = document.getElementById("heatMetricSelect").selectedOptions[0].text.replace("Heat Map Metric: ","");
-        const isRate = metric === "return_rate";
+        const width = Math.max(container.clientWidth || 800, 800);
+        const height = Math.max(container.clientHeight || 500, 500);
 
-        const trace = {
-          type: "choropleth",
-          geojson: geojson,
-          featureidkey: "id",
-          locations: fips,
-          z: zvals,
-          text: labels,
-          colorscale: isRate
-            ? [
-                [0.0, "#f5b6ad"],
-                [0.5, "#f3e7a6"],
-                [1.0, "#bfe3bf"]
-              ]
-            : [
-                [0.0, "#f5e8e5"],
-                [0.35, "#e7c8bf"],
-                [0.7, "#cf8f7f"],
-                [1.0, "#8d0d0d"]
-              ],
-          marker: {
-            line: {
-              color: "#ffffff",
-              width: 0.8
-            }
-          },
-          colorbar: {
-            title: metricLabel,
-            thickness: 12
-          },
-          hovertemplate: "<b>%{text}</b><br>" + metricLabel + ": %{z:.1f}" + (isRate ? "%" : "") + "<extra></extra>"
-        };
+        const svg = d3.select(container)
+          .append("svg")
+          .attr("width", "100%")
+          .attr("height", "100%")
+          .attr("viewBox", `0 0 ${width} ${height}`)
+          .style("display", "block");
 
-        const layout = {
-          margin: {l: 0, r: 0, t: 0, b: 0},
-          geo: {
-            scope: "usa",
-            fitbounds: "locations",
-            visible: false,
-            bgcolor: "rgba(0,0,0,0)",
-            projection: { type: "mercator" }
-          },
-          paper_bgcolor: "rgba(0,0,0,0)",
-          plot_bgcolor: "rgba(0,0,0,0)"
-        };
+        const projection = d3.geoMercator().fitSize([width, height], geojson);
+        const path = d3.geoPath(projection);
 
-        const config = {
-          responsive: true,
-          displayModeBar: false
-        };
-
-        await Plotly.newPlot(container, [trace], layout, config);
-
-        container.on("plotly_click", (eventData) => {
-          const clickedCounty = eventData?.points?.[0]?.text || "";
-          if (!clickedCounty) return;
-
-          if (selectedHeatCounty === clickedCounty) {
-            selectedHeatCounty = "";
-            state.search = "";
-            document.getElementById("searchBox").value = "";
-          } else {
-            selectedHeatCounty = clickedCounty;
-            state.dimension = "County";
-            document.getElementById("dimensionSelect").value = "County";
-            state.search = clickedCounty;
-            document.getElementById("searchBox").value = clickedCounty;
-          }
-          refreshView();
+        const values = geojson.features.map(f => {
+          const county = normalizeCountyMapLabel(f.properties?.name || "");
+          return Number(valueMap.get(county) || 0);
         });
+        const maxValue = Math.max(...values, 0);
 
-        const maxValue = Math.max(...zvals, 0);
+        let color;
+        if (metric === "return_rate") {
+          color = d3.scaleLinear()
+            .domain([0, Math.max(maxValue * 0.5, 25), Math.max(maxValue, 50)])
+            .range(["#f5b6ad", "#f3e7a6", "#bfe3bf"]);
+        } else {
+          color = d3.scaleLinear()
+            .domain([0, Math.max(maxValue * 0.5, 1), Math.max(maxValue, 1)])
+            .range(["#f5e8e5", "#cf8f7f", "#8d0d0d"]);
+        }
+
+        svg.append("g")
+          .selectAll("path")
+          .data(geojson.features)
+          .join("path")
+          .attr("class", "heat-county")
+          .attr("d", path)
+          .attr("fill", d => {
+            const v = Number(valueMap.get(normalizeCountyMapLabel(d.properties?.name || "")) || 0);
+            return color(v);
+          })
+          .attr("stroke", "#ffffff")
+          .attr("stroke-width", 1)
+          .on("mousemove", function(event, d) {
+            const countyName = d.properties?.name || "";
+            const row = aggregated.find(r => normalizeCountyMapLabel(r.label) === normalizeCountyMapLabel(countyName));
+            const value = row ? getHeatMetricValue(row, metric) : 0;
+            const metricLabel = document.getElementById("heatMetricSelect").selectedOptions[0].text.replace("Heat Map Metric: ","");
+            const formatted = metric === "return_rate" ? Number(value).toFixed(1) + "%" : formatNum(value);
+            tooltip.style.display = "block";
+            tooltip.style.left = (event.clientX + 14) + "px";
+            tooltip.style.top = (event.clientY + 14) + "px";
+            tooltip.innerHTML = `<strong>${countyName}</strong><br>${metricLabel}: ${formatted}`;
+          })
+          .on("mouseleave", function() {
+            tooltip.style.display = "none";
+          })
+          .on("click", function(event, d) {
+            const clickedCounty = d.properties?.name || "";
+            if (!clickedCounty) return;
+
+            if (selectedHeatCounty === clickedCounty) {
+              selectedHeatCounty = "";
+              state.search = "";
+              document.getElementById("searchBox").value = "";
+            } else {
+              selectedHeatCounty = clickedCounty;
+              state.dimension = "County";
+              document.getElementById("dimensionSelect").value = "County";
+              state.search = clickedCounty;
+              document.getElementById("searchBox").value = clickedCounty;
+            }
+            refreshView();
+          });
+
+        const metricLabel = document.getElementById("heatMetricSelect").selectedOptions[0].text.replace("Heat Map Metric: ","");
         statusEl.textContent = maxValue > 0
           ? `Showing Pennsylvania county heat map for ${metricLabel.toLowerCase()} using the current dashboard filters. Click a county to filter the dashboard.`
           : `No county values were available for ${metricLabel.toLowerCase()} under the current filters.`;
       } catch (error) {
         destroyHeatMapChart();
-        container.innerHTML = "";
-        statusEl.textContent = "The county heat map could not be loaded right now.";
+        statusEl.textContent = `The county heat map could not be loaded right now.`;
         console.error(error);
       }
     }

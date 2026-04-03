@@ -349,7 +349,7 @@
     }
     .heat-map-wrap {
       width:100%;
-      height:560px;
+      height:500px;
       position:relative;
       border:1px solid var(--line);
       border-radius:18px;
@@ -359,8 +359,6 @@
     .heat-map-canvas {
       width:100%;
       height:100%;
-      zoom:1.333333;
-      transform-origin: top left;
     }
 
 </style>
@@ -551,7 +549,7 @@
       <div class="heat-map-wrap">
         <div id="heatMapCanvas" class="heat-map-canvas"></div>
       </div>
-      <div class="foot" id="heatMapStatus">County heat map loading…</div>
+      <div class="foot" id="heatMapStatus">County heat map loading… Click a county to filter the dashboard to that county. Click it again to clear.</div>
     </section>
 
     <section class="card section">
@@ -675,6 +673,7 @@
 
     let heatMapChart = null;
     let paCountyGeojson = null;
+    let selectedHeatCounty = "";
 
     const formatNum = (n) => Number(n || 0).toLocaleString();
     const escapeAttr = (value) => String(value ?? "")
@@ -1046,12 +1045,11 @@
         const layout = {
           margin: {l: 0, r: 0, t: 0, b: 0},
           geo: {
+            scope: "usa",
+            fitbounds: "locations",
             visible: false,
             bgcolor: "rgba(0,0,0,0)",
-            center: { lon: -77.7, lat: 40.9 },
-            projection: { type: "mercator", scale: 6.2 },
-            lonaxis: { range: [-80.6, -74.6] },
-            lataxis: { range: [39.7, 42.4] }
+            projection: { type: "mercator" }
           },
           paper_bgcolor: "rgba(0,0,0,0)",
           plot_bgcolor: "rgba(0,0,0,0)"
@@ -1064,9 +1062,27 @@
 
         await Plotly.newPlot(container, [trace], layout, config);
 
+        container.on("plotly_click", (eventData) => {
+          const clickedCounty = eventData?.points?.[0]?.text || "";
+          if (!clickedCounty) return;
+
+          if (selectedHeatCounty === clickedCounty) {
+            selectedHeatCounty = "";
+            state.search = "";
+            document.getElementById("searchBox").value = "";
+          } else {
+            selectedHeatCounty = clickedCounty;
+            state.dimension = "County";
+            document.getElementById("dimensionSelect").value = "County";
+            state.search = clickedCounty;
+            document.getElementById("searchBox").value = clickedCounty;
+          }
+          refreshView();
+        });
+
         const maxValue = Math.max(...zvals, 0);
         statusEl.textContent = maxValue > 0
-          ? `Showing a tighter Pennsylvania county heat map for ${metricLabel.toLowerCase()} using the current dashboard filters.`
+          ? `Showing Pennsylvania county heat map for ${metricLabel.toLowerCase()} using the current dashboard filters. Click a county to filter the dashboard.`
           : `No county values were available for ${metricLabel.toLowerCase()} under the current filters.`;
       } catch (error) {
         destroyHeatMapChart();
@@ -1501,6 +1517,7 @@
     document.getElementById("dimensionSelect").addEventListener("change", (e) => {
       state.dimension = e.target.value;
       state.sort = "label_asc";
+      selectedHeatCounty = "";
       document.getElementById("sortSelect").value = "label_asc";
       refreshView();
     });
@@ -1514,6 +1531,7 @@
     });
     document.getElementById("searchBox").addEventListener("input", (e) => {
       state.search = e.target.value || "";
+      if (!state.search) selectedHeatCounty = "";
       refreshView();
     });
     document.getElementById("sortSelect").addEventListener("change", (e) => {

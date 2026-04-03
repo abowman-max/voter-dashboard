@@ -474,21 +474,37 @@
 
     <section class="card section" style="margin-bottom:22px;">
       <h2>Daily Change</h2>
-      <p>New ballot activity since the previous day’s file. This compares the current <strong>DataTable.xlsx</strong> against a hosted <strong>PreviousDataTable.xlsx</strong>.</p>
+      <p>New ballot activity since the previous day’s file. This compares the current <strong>DataTable.xlsx</strong> against a hosted <strong>PreviousDataTable.xlsx</strong> and breaks the change out by party using the dashboard color scheme.</p>
       <div class="grid" style="grid-template-columns: 1.2fr .8fr; gap:18px;">
         <div>
           <div class="mini-chart" style="height:240px;">
             <canvas id="dailyChangeChart"></canvas>
           </div>
         </div>
-        <div class="stats" style="grid-template-columns:repeat(2,1fr); margin:0;">
+        <div class="stats" style="grid-template-columns:repeat(2,1fr); margin:0; gap:10px;">
           <div class="card stat">
-            <div class="label">New Applications</div>
-            <div class="value" id="dailyAppliedValue">—</div>
+            <div class="label">Dem Applied</div>
+            <div class="value" id="dailyAppliedDValue">—</div>
           </div>
           <div class="card stat">
-            <div class="label">New Returns</div>
-            <div class="value" id="dailyReturnedValue">—</div>
+            <div class="label">Rep Applied</div>
+            <div class="value" id="dailyAppliedRValue">—</div>
+          </div>
+          <div class="card stat">
+            <div class="label">Other Applied</div>
+            <div class="value" id="dailyAppliedOValue">—</div>
+          </div>
+          <div class="card stat">
+            <div class="label">Dem Returned</div>
+            <div class="value" id="dailyReturnedDValue">—</div>
+          </div>
+          <div class="card stat">
+            <div class="label">Rep Returned</div>
+            <div class="value" id="dailyReturnedRValue">—</div>
+          </div>
+          <div class="card stat">
+            <div class="label">Other Returned</div>
+            <div class="value" id="dailyReturnedOValue">—</div>
           </div>
         </div>
       </div>
@@ -644,7 +660,7 @@
       ballotView: "all",
       partyFilter: "ALL",
       previousRows: [],
-      dailyDelta: { applied: 0, returned: 0, hasPrevious: false },
+      dailyDelta: { applied: 0, returned: 0, hasPrevious: false, appliedByParty: {D:0,R:0,O:0}, returnedByParty: {D:0,R:0,O:0} },
       pinnedPartyBreakRow: null
     };
 
@@ -813,14 +829,40 @@
       return delta;
     }
 
+    function computeDeltaByParty(currentRows, previousRows, ballotView) {
+      const parties = ["D", "R", "O"];
+      const out = { D: 0, R: 0, O: 0 };
+
+      parties.forEach(party => {
+        const currentRowsFiltered = getRowsForDailyDelta(currentRows, ballotView).filter(r => r.Party === party);
+        const previousRowsFiltered = getRowsForDailyDelta(previousRows, ballotView).filter(r => r.Party === party);
+
+        const currentTotal = currentRowsFiltered.reduce((sum, r) => sum + (Number(r.Voters) || 0), 0);
+        const previousTotal = previousRowsFiltered.reduce((sum, r) => sum + (Number(r.Voters) || 0), 0);
+        out[party] = currentTotal - previousTotal;
+      });
+
+      return out;
+    }
+
     function computeDailyDelta() {
       if (!state.previousRows.length) {
-        return { applied: 0, returned: 0, hasPrevious: false };
+        return {
+          applied: 0,
+          returned: 0,
+          hasPrevious: false,
+          appliedByParty: { D: 0, R: 0, O: 0 },
+          returnedByParty: { D: 0, R: 0, O: 0 }
+        };
       }
+      const appliedByParty = computeDeltaByParty(state.rawRows, state.previousRows, "applied");
+      const returnedByParty = computeDeltaByParty(state.rawRows, state.previousRows, "returned");
       return {
-        applied: computeDeltaForBallotView(state.rawRows, state.previousRows, "applied"),
-        returned: computeDeltaForBallotView(state.rawRows, state.previousRows, "returned"),
-        hasPrevious: true
+        applied: appliedByParty.D + appliedByParty.R + appliedByParty.O,
+        returned: returnedByParty.D + returnedByParty.R + returnedByParty.O,
+        hasPrevious: true,
+        appliedByParty,
+        returnedByParty
       };
     }
 
@@ -940,23 +982,45 @@
       type: "bar",
       data: {
         labels: ["New Applications", "New Returns"],
-        datasets: [{
-          label: "Change Since Previous Day",
-          data: [0, 0],
-          backgroundColor: ["#2f6fdf", "#8d0d0d"],
-          borderRadius: 8
-        }]
+        datasets: [
+          {
+            label: "Democrats",
+            data: [0, 0],
+            backgroundColor: "#2f6fdf",
+            borderRadius: 8
+          },
+          {
+            label: "Republicans",
+            data: [0, 0],
+            backgroundColor: "#8d0d0d",
+            borderRadius: 8
+          },
+          {
+            label: "Other",
+            data: [0, 0],
+            backgroundColor: "#2fa84f",
+            borderRadius: 8
+          }
+        ]
       },
       options: {
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: true,
+            position: "top",
+            labels: {
+              usePointStyle: true,
+              boxWidth: 10,
+              color: "#4a4a4a"
+            }
+          },
           tooltip: {
             callbacks: {
               label: function(context) {
                 const val = Number(context.raw || 0);
                 const prefix = val > 0 ? "+" : "";
-                return `${prefix}${formatNum(val)}`;
+                return `${context.dataset.label}: ${prefix}${formatNum(val)}`;
               }
             }
           }
@@ -1217,18 +1281,24 @@
       renderTable(allRows);
 
       state.dailyDelta = computeDailyDelta();
-      dailyChangeChart.data.datasets[0].data = [state.dailyDelta.applied, state.dailyDelta.returned];
+      dailyChangeChart.data.datasets[0].data = [state.dailyDelta.appliedByParty.D, state.dailyDelta.returnedByParty.D];
+      dailyChangeChart.data.datasets[1].data = [state.dailyDelta.appliedByParty.R, state.dailyDelta.returnedByParty.R];
+      dailyChangeChart.data.datasets[2].data = [state.dailyDelta.appliedByParty.O, state.dailyDelta.returnedByParty.O];
       dailyChangeChart.update();
 
-      document.getElementById("dailyAppliedValue").textContent = (state.dailyDelta.applied > 0 ? "+" : "") + formatNum(state.dailyDelta.applied);
-      document.getElementById("dailyReturnedValue").textContent = (state.dailyDelta.returned > 0 ? "+" : "") + formatNum(state.dailyDelta.returned);
+      document.getElementById("dailyAppliedDValue").textContent = (state.dailyDelta.appliedByParty.D > 0 ? "+" : "") + formatNum(state.dailyDelta.appliedByParty.D);
+      document.getElementById("dailyAppliedRValue").textContent = (state.dailyDelta.appliedByParty.R > 0 ? "+" : "") + formatNum(state.dailyDelta.appliedByParty.R);
+      document.getElementById("dailyAppliedOValue").textContent = (state.dailyDelta.appliedByParty.O > 0 ? "+" : "") + formatNum(state.dailyDelta.appliedByParty.O);
+      document.getElementById("dailyReturnedDValue").textContent = (state.dailyDelta.returnedByParty.D > 0 ? "+" : "") + formatNum(state.dailyDelta.returnedByParty.D);
+      document.getElementById("dailyReturnedRValue").textContent = (state.dailyDelta.returnedByParty.R > 0 ? "+" : "") + formatNum(state.dailyDelta.returnedByParty.R);
+      document.getElementById("dailyReturnedOValue").textContent = (state.dailyDelta.returnedByParty.O > 0 ? "+" : "") + formatNum(state.dailyDelta.returnedByParty.O);
 
       const partyText = state.partyFilter === "ALL" ? "all parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
       if (state.ballotView === "all") {
-        document.getElementById("dailyChangeStatus").textContent = "Daily change compares applied and returned activity versus PreviousDataTable.xlsx while totals above show all voters.";
+        document.getElementById("dailyChangeStatus").textContent = "Daily change compares applied and returned activity versus PreviousDataTable.xlsx and breaks both out by party.";
       } else {
         document.getElementById("dailyChangeStatus").textContent = state.dailyDelta.hasPrevious
-          ? `Daily change shown versus PreviousDataTable.xlsx for ${partyText}.`
+          ? `Daily change shown versus PreviousDataTable.xlsx for ${partyText}, with party-color breakdowns.`
           : `To show daily change, upload a previous-day file named PreviousDataTable.xlsx in the same GitHub folder.`;
       }
 

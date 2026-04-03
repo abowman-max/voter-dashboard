@@ -241,6 +241,11 @@
     tbody tr:hover {
       background:#fcf9f7;
     }
+    tbody tr.active-row {
+      background:#eef4ff;
+      outline:2px solid #2f6fdf;
+      outline-offset:-2px;
+    }
     td.num, th.num {
       text-align:right;
       font-variant-numeric: tabular-nums;
@@ -406,6 +411,16 @@
       </div>
     </section>
 
+    <section class="card" style="margin:16px 0; padding:16px 20px; border-left:6px solid #8d0d0d;">
+      <div style="font-size:16px; font-weight:600; color:#232323; margin-bottom:6px;">
+        Need deeper insights or custom voter analysis?
+      </div>
+      <div style="font-size:14px; color:#555; line-height:1.5;">
+        Contact <strong>Targeted Strategic Solutions</strong> for detailed breakdowns, custom reports, and strategic data support.
+        Call us at <strong>(484) 571-7131</strong>.
+      </div>
+    </section>
+
     <section class="stats">
       <div class="card stat">
         <div class="label" id="groupCountLabel">Groups</div>
@@ -510,10 +525,11 @@
 
       <section class="card section">
         <h2>Party Break</h2>
-        <p>Statewide breakout by party.</p>
+        <p>Statewide breakout by party. Hover over any row in the data table to see that geography’s party mix.</p>
         <div class="mini-chart">
           <canvas id="donutChart"></canvas>
         </div>
+        <div class="foot" id="partyBreakStatus">Showing statewide party mix.</div>
         <div class="foot">
           
         </div>
@@ -541,8 +557,8 @@
         </table>
       </div>
       <div class="foot">
-        If you want to test a file locally before replacing the hosted file,
-        <button class="btn-link" id="loadLocalBtn" type="button">load a local workbook</button>.
+        
+        <button class="btn-link" id="loadLocalBtn" type="button"></button>.
         <input class="hidden-file-input" id="localFileInput" type="file" accept=".xlsx,.xls" />
       </div>
     </section>
@@ -591,7 +607,8 @@
       ballotView: "applied",
       partyFilter: "ALL",
       previousRows: [],
-      dailyDelta: { applied: 0, returned: 0, hasPrevious: false }
+      dailyDelta: { applied: 0, returned: 0, hasPrevious: false },
+      pinnedPartyBreakRow: null
     };
 
     const formatNum = (n) => Number(n || 0).toLocaleString();
@@ -923,7 +940,12 @@
         const otherPct = r.Total ? ((r.O / r.Total) * 100).toFixed(1) : "0.0";
         const repPct = r.Total ? ((r.R / r.Total) * 100).toFixed(1) : "0.0";
         return `
-        <tr>
+        <tr class="detail-row"
+            data-label="${String(r.label).replace(/"/g, '&quot;')}"
+            data-d="${r.D}"
+            data-o="${r.O}"
+            data-r="${r.R}"
+            data-total="${r.Total}">
           <td>${r.label}</td>
           <td class="num">${formatNum(r.D)}</td>
           <td class="num">${demPct}%</td>
@@ -935,6 +957,104 @@
         </tr>
       `;
       }).join("");
+
+      attachTableHoverHandlers();
+    }
+
+
+    function showStatewidePartyBreak() {
+      const visibleTotals = computeVisibleTotals();
+      donutChart.data.labels = ["Democrats", "Other", "Republicans"];
+      donutChart.data.datasets[0].data = [visibleTotals.D, visibleTotals.O, visibleTotals.R];
+      donutChart.update();
+      document.getElementById("partyBreakStatus").textContent = "Showing statewide party mix. Hover over or tap a row to inspect that geography.";
+    }
+
+    function showRowPartyBreak(label, d, o, r, total, pinned = false) {
+      donutChart.data.labels = ["Democrats", "Other", "Republicans"];
+      donutChart.data.datasets[0].data = [d, o, r];
+      donutChart.update();
+
+      const demPct = total ? ((d / total) * 100).toFixed(1) : "0.0";
+      const otherPct = total ? ((o / total) * 100).toFixed(1) : "0.0";
+      const repPct = total ? ((r / total) * 100).toFixed(1) : "0.0";
+
+      document.getElementById("partyBreakStatus").textContent =
+        `${label} — Dem ${demPct}%, Other ${otherPct}%, Rep ${repPct}%${pinned ? " (selected)" : ""}`;
+    }
+
+    function clearActiveRows() {
+      document.querySelectorAll("#detailTable tbody tr.detail-row").forEach((row) => {
+        row.classList.remove("active-row");
+      });
+    }
+
+    function applyPinnedPartyBreakIfPossible() {
+      if (!state.pinnedPartyBreakRow) {
+        showStatewidePartyBreak();
+        return;
+      }
+
+      const matchingRow = Array.from(document.querySelectorAll("#detailTable tbody tr.detail-row")).find((row) => {
+        return row.getAttribute("data-label") === state.pinnedPartyBreakRow.label;
+      });
+
+      if (!matchingRow) {
+        state.pinnedPartyBreakRow = null;
+        showStatewidePartyBreak();
+        return;
+      }
+
+      matchingRow.classList.add("active-row");
+      showRowPartyBreak(
+        state.pinnedPartyBreakRow.label,
+        state.pinnedPartyBreakRow.d,
+        state.pinnedPartyBreakRow.o,
+        state.pinnedPartyBreakRow.r,
+        state.pinnedPartyBreakRow.total,
+        true
+      );
+    }
+
+    function attachTableHoverHandlers() {
+      document.querySelectorAll("#detailTable tbody tr.detail-row").forEach((row) => {
+        const getRowData = () => ({
+          label: row.getAttribute("data-label") || "",
+          d: Number(row.getAttribute("data-d") || 0),
+          o: Number(row.getAttribute("data-o") || 0),
+          r: Number(row.getAttribute("data-r") || 0),
+          total: Number(row.getAttribute("data-total") || 0)
+        });
+
+        row.addEventListener("mouseenter", () => {
+          if (state.pinnedPartyBreakRow) return;
+          const data = getRowData();
+          showRowPartyBreak(data.label, data.d, data.o, data.r, data.total, false);
+        });
+
+        row.addEventListener("mouseleave", () => {
+          if (state.pinnedPartyBreakRow) return;
+          showStatewidePartyBreak();
+        });
+
+        row.addEventListener("click", () => {
+          const data = getRowData();
+
+          if (state.pinnedPartyBreakRow && state.pinnedPartyBreakRow.label === data.label) {
+            state.pinnedPartyBreakRow = null;
+            clearActiveRows();
+            showStatewidePartyBreak();
+            return;
+          }
+
+          state.pinnedPartyBreakRow = data;
+          clearActiveRows();
+          row.classList.add("active-row");
+          showRowPartyBreak(data.label, data.d, data.o, data.r, data.total, true);
+        });
+      });
+
+      applyPinnedPartyBreakIfPossible();
     }
 
     function refreshView() {
@@ -952,9 +1072,7 @@
       mainChart.options.scales.y.stacked = state.mode === "stacked";
       mainChart.update();
 
-      const visibleTotals = computeVisibleTotals();
-      donutChart.data.datasets[0].data = [visibleTotals.D, visibleTotals.O, visibleTotals.R];
-      donutChart.update();
+      showStatewidePartyBreak();
 
       renderTable(allRows);
 
@@ -1027,31 +1145,37 @@
     document.getElementById("dimensionSelect").addEventListener("change", (e) => {
       state.dimension = e.target.value;
       state.sort = "label_asc";
+      state.pinnedPartyBreakRow = null;
       document.getElementById("sortSelect").value = "label_asc";
       refreshView();
     });
     document.getElementById("ballotViewSelect").addEventListener("change", (e) => {
       state.ballotView = e.target.value;
+      state.pinnedPartyBreakRow = null;
       refreshView();
     });
 
     document.getElementById("partyFilterSelect").addEventListener("change", (e) => {
       state.partyFilter = e.target.value;
+      state.pinnedPartyBreakRow = null;
       refreshView();
     });
 
     document.getElementById("searchBox").addEventListener("input", (e) => {
       state.search = e.target.value || "";
+      state.pinnedPartyBreakRow = null;
       refreshView();
     });
 
     document.getElementById("sortSelect").addEventListener("change", (e) => {
       state.sort = e.target.value;
+      state.pinnedPartyBreakRow = null;
       refreshView();
     });
 
     document.getElementById("limitSelect").addEventListener("change", (e) => {
       state.limit = Number(e.target.value);
+      state.pinnedPartyBreakRow = null;
       refreshView();
     });
 

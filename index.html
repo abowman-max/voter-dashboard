@@ -325,6 +325,18 @@
 
 
 
+
+.growth-badge {
+  display:inline-block;
+  margin-left:6px;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  background:#e6f0ff;
+  color:#1f4fa3;
+}
+
 </style>
 
 
@@ -901,6 +913,37 @@
         appliedByParty, returnedByParty
       };
     }
+    function computeGeographyGrowthMap(dimension) {
+      const currentAgg = aggregateByDimension(state.rawRows, dimension);
+      const previousAgg = aggregateByDimension(state.previousRows || [], dimension);
+
+      const currentMap = new Map(currentAgg.map(r => [r.label, r]));
+      const previousMap = new Map(previousAgg.map(r => [r.label, r]));
+      const labels = new Set([...currentMap.keys(), ...previousMap.keys()]);
+      const out = new Map();
+
+      labels.forEach(label => {
+        const cur = currentMap.get(label) || {
+          appliedTotal: 0,
+          returnedTotal: 0
+        };
+        const prev = previousMap.get(label) || {
+          appliedTotal: 0,
+          returnedTotal: 0
+        };
+
+        const appliedDelta = Number(cur.appliedTotal || 0) - Number(prev.appliedTotal || 0);
+        const returnedDelta = Number(cur.returnedTotal || 0) - Number(prev.returnedTotal || 0);
+
+        out.set(label, {
+          appliedDelta,
+          returnedDelta,
+          combinedDelta: appliedDelta + returnedDelta
+        });
+      });
+
+      return out;
+    }
 
     const mainCtx = document.getElementById("mainChart").getContext("2d");
     const donutCtx = document.getElementById("donutChart").getContext("2d");
@@ -1047,8 +1090,10 @@
       const benchmark = appliedSum ? ((returnedSum / appliedSum) * 100).toFixed(1) : "0.0";
       document.getElementById("detailBenchmarkNote").textContent =
         state.detailTableMode === "returned"
-          ? `Statewide benchmark return rate: ${benchmark}%. Top 5 and bottom 5 performers are tagged below.`
-          : "";
+          ? `Statewide benchmark return rate: ${benchmark}%. Top 5, bottom 5, and top daily growth areas are tagged below.`
+          : (state.dailyDelta && state.dailyDelta.hasPrevious
+              ? `Top 5, bottom 5, and top daily growth areas are tagged below using PreviousDataTable.xlsx as the prior day baseline.`
+              : ``);
 
       document.getElementById("detailAppliedBtn").classList.toggle("active", state.detailTableMode === "applied");
       document.getElementById("detailReturnedBtn").classList.toggle("active", state.detailTableMode === "returned");
@@ -1091,8 +1136,14 @@
         return "rate-low";
       }
 
+      function getAppliedShare(row) {
+        return Number(row.appliedTotal || 0);
+      }
+
       let topLabels = new Set();
       let bottomLabels = new Set();
+      let growthLabels = new Set();
+
       if (state.detailTableMode === "returned") {
         const ranked = [...rows]
           .filter(r => Number(r.appliedTotal || 0) > 0)
@@ -1100,6 +1151,29 @@
 
         ranked.slice(0, 5).forEach(r => topLabels.add(r.label));
         [...ranked].reverse().slice(0, 5).forEach(r => bottomLabels.add(r.label));
+      } else {
+        const ranked = [...rows]
+          .sort((a,b) => getAppliedShare(b) - getAppliedShare(a));
+
+        ranked.slice(0, 5).forEach(r => topLabels.add(r.label));
+        [...ranked].reverse().slice(0, 5).forEach(r => bottomLabels.add(r.label));
+      }
+
+      if (state.previousRows && state.previousRows.length) {
+        const growthMap = computeGeographyGrowthMap(state.dimension);
+        const rankedGrowth = [...rows]
+          .map(r => ({
+            label: r.label,
+            delta: state.detailTableMode === "returned"
+              ? (growthMap.get(r.label)?.returnedDelta || 0)
+              : (growthMap.get(r.label)?.appliedDelta || 0)
+          }))
+          .sort((a,b) => b.delta - a.delta);
+
+        rankedGrowth
+          .filter(r => r.delta > 0)
+          .slice(0, 5)
+          .forEach(r => growthLabels.add(r.label));
       }
 
       tbody.innerHTML = rows.map(r => {
@@ -1123,10 +1197,10 @@
         }
 
         let badge = "";
-        if (state.detailTableMode === "returned") {
-          if (topLabels.has(r.label)) badge = '<span class="performer-badge performer-top">Top 5</span>';
-          else if (bottomLabels.has(r.label)) badge = '<span class="performer-badge performer-bottom">Bottom 5</span>';
-        }
+        if (topLabels.has(r.label)) badge += '<span class="performer-badge performer-top">Top 5</span>';
+        else if (bottomLabels.has(r.label)) badge += '<span class="performer-badge performer-bottom">Bottom 5</span>';
+
+        if (growthLabels.has(r.label)) badge += '<span class="growth-badge">Top Daily Growth</span>';
 
         return `
           <tr class="detail-row"

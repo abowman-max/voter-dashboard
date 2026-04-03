@@ -498,7 +498,7 @@
     <div class="grid">
       <section class="card section">
         <h2>Comparison View</h2>
-        <p>Use the dropdowns to switch geography, toggle between applied and returned ballot views, and filter by party.</p>
+        <p>Use the dropdowns to switch geography, choose all voters or ballot activity views, and filter by party.</p>
 
         <div class="toolbar">
           <select id="dimensionSelect">
@@ -508,6 +508,7 @@
             <option value="STH">Break down by: State House District</option>
           </select>
           <select id="ballotViewSelect">
+            <option value="all" selected>View: All voters</option>
             <option value="applied">View: Applied for ballot</option>
             <option value="returned">View: Returned ballot</option>
           </select>
@@ -640,7 +641,7 @@
       sort: "label_asc",
       limit: 10,
       overallTotals: { D: 0, O: 0, R: 0, Total: 0 },
-      ballotView: "applied",
+      ballotView: "all",
       partyFilter: "ALL",
       previousRows: [],
       dailyDelta: { applied: 0, returned: 0, hasPrevious: false },
@@ -707,7 +708,13 @@
 
     function getViewFilteredRows(rows) {
       return rows.filter(r => {
-        const matchesBallotView = state.ballotView === "returned" ? isReturnedRow(r) : isAppliedRow(r);
+        const matchesBallotView =
+          state.ballotView === "all"
+            ? true
+            : state.ballotView === "returned"
+              ? isReturnedRow(r)
+              : isAppliedRow(r);
+
         const matchesParty = state.partyFilter === "ALL" ? true : r.Party === state.partyFilter;
         return matchesBallotView && matchesParty;
       });
@@ -821,7 +828,7 @@
       const meta = dimensionMeta[state.dimension];
       document.getElementById("firstColHeader").textContent = meta.label;
       document.getElementById("tableTitle").textContent = meta.title;
-      const viewText = state.ballotView === "returned" ? "returned ballots" : "applied ballots";
+      const viewText = state.ballotView === "all" ? "all voters" : (state.ballotView === "returned" ? "returned ballots" : "applied ballots");
       const partyText = state.partyFilter === "ALL" ? "all parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
       document.getElementById("tableSubtitle").textContent = `Rows update automatically based on ${meta.label}, ${viewText}, and ${partyText}.`;
       document.getElementById("searchBox").placeholder = meta.searchPlaceholder;
@@ -1217,9 +1224,13 @@
       document.getElementById("dailyReturnedValue").textContent = (state.dailyDelta.returned > 0 ? "+" : "") + formatNum(state.dailyDelta.returned);
 
       const partyText = state.partyFilter === "ALL" ? "all parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
-      document.getElementById("dailyChangeStatus").textContent = state.dailyDelta.hasPrevious
-        ? `Daily change shown versus PreviousDataTable.xlsx for ${partyText}.`
-        : `To show daily change, upload a previous-day file named PreviousDataTable.xlsx in the same GitHub folder.`;
+      if (state.ballotView === "all") {
+        document.getElementById("dailyChangeStatus").textContent = "Daily change compares applied and returned activity versus PreviousDataTable.xlsx while totals above show all voters.";
+      } else {
+        document.getElementById("dailyChangeStatus").textContent = state.dailyDelta.hasPrevious
+          ? `Daily change shown versus PreviousDataTable.xlsx for ${partyText}.`
+          : `To show daily change, upload a previous-day file named PreviousDataTable.xlsx in the same GitHub folder.`;
+      }
 
       updatePrintContext();
     }
@@ -1355,7 +1366,7 @@
 
     function updatePrintContext() {
       const meta = dimensionMeta[state.dimension];
-      const ballotText = state.ballotView === "returned" ? "Returned Ballots" : "Applied Ballots";
+      const ballotText = state.ballotView === "all" ? "All Voters" : (state.ballotView === "returned" ? "Returned Ballots" : "Applied Ballots");
       const partyText = state.partyFilter === "ALL" ? "All Parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
       const sortLabel = document.getElementById("sortSelect").options[document.getElementById("sortSelect").selectedIndex].text;
       const updatedText = document.getElementById("dataStatus").textContent.trim();

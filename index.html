@@ -669,7 +669,11 @@
         </div>
         <button id="printReportBtn" type="button">Print PDF Report</button>
       </div>
-      <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+      <div class="chart-wrap" style="overflow-x:auto; overflow-y:hidden;">
+        <div id="mainChartInner" style="min-width:1200px; height:100%;">
+          <canvas id="mainChart"></canvas>
+        </div>
+      </div>
       <div class="foot">Chart respects the Top 10 / 25 / 50 / All setting. The detail table below always shows all matching rows.</div>
     </section>
 
@@ -1348,7 +1352,7 @@
           tooltip:{ callbacks:{ label:(context) => `${context.dataset.label}: ${formatNum(context.raw)}` } }
         },
         scales:{
-          x:{ stacked:true, ticks:{ color:"#555", maxRotation:45, minRotation:45 }, grid:{ display:false }},
+          x:{ stacked:true, ticks:{ color:"#555", maxRotation:0, minRotation:0, autoSkip:false, font:{ size:11 } }, grid:{ display:false }},
           y:{ stacked:true, beginAtZero:true, ticks:{ color:"#555", callback:(value) => formatNum(value) }, grid:{ color:"#eee7e3" }}
         }
       }
@@ -1611,6 +1615,12 @@
       const allRows = getFilteredRows();
       const chartRows = allRows.slice(0, state.limit);
       mainChart.data.labels = chartRows.map(r => r.label);
+
+      const chartInner = document.getElementById("mainChartInner");
+      const perLabelWidth = 70;
+      const minWidth = 1200;
+      chartInner.style.width = Math.max(minWidth, chartRows.length * perLabelWidth) + "px";
+
       mainChart.data.datasets[0].data = chartRows.map(r => r.D);
       mainChart.data.datasets[1].data = chartRows.map(r => r.O);
       mainChart.data.datasets[2].data = chartRows.map(r => r.R);

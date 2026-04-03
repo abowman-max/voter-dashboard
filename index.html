@@ -613,67 +613,7 @@
       </div>
     </section>
 
-    <div class="grid">
-      <section class="card section">
-        <h2>Comparison View</h2>
-        <p>Use the dropdowns to switch geography, choose all voters or ballot activity views, and filter by party.</p>
-
-        <div class="toolbar">
-          <select id="dimensionSelect">
-            <option value="County">Break down by: County</option>
-            <option value="USC">Break down by: Congressional District</option>
-            <option value="STS">Break down by: State Senate District</option>
-            <option value="STH">Break down by: State House District</option>
-          </select>
-          <select id="ballotViewSelect">
-            <option value="all" selected>View: All voters</option>
-            <option value="applied">View: Applied for ballot</option>
-            <option value="returned">View: Returned ballot</option>
-          </select>
-          <select id="partyFilterSelect">
-            <option value="ALL">Party: All</option>
-            <option value="D">Party: Democrats</option>
-            <option value="R">Party: Republicans</option>
-            <option value="O">Party: Other</option>
-          </select>
-          <input id="searchBox" class="grow" type="text" placeholder="Search current view..." />
-          <select id="sortSelect">
-            <option value="label_asc">Sort: Geographic order</option>
-            <option value="total_desc">Sort: Total high to low</option>
-            <option value="total_asc">Sort: Total low to high</option>
-            <option value="label_desc">Sort: Reverse geographic order</option>
-            <option value="dem_desc">Sort: Democrats high to low</option>
-            <option value="rep_desc">Sort: Republicans high to low</option>
-            <option value="other_desc">Sort: Other high to low</option>
-          </select>
-          <select id="limitSelect">
-            <option value="10">Top 10</option>
-            <option value="25">Top 25</option>
-            <option value="50">Top 50</option>
-            <option value="9999">All</option>
-          </select>
-          <div class="toggle-group">
-            <button id="stackedBtn" class="active" type="button">Stacked</button>
-            <button id="groupedBtn" type="button">Grouped</button>
-          </div>
-          <button id="printReportBtn" type="button">Print PDF Report</button>
-        </div>
-
-        <div class="chart-wrap">
-          <canvas id="mainChart"></canvas>
-        </div>
-
-        <div class="legend-note">
-          <span><span class="dot" style="background:var(--brand-soft);"></span>Democrats</span>
-          <span><span class="dot" style="background:var(--other);"></span>Other</span>
-          <span><span class="dot" style="background:var(--brand);"></span>Republicans</span>
-        </div>
-      </section>
-
-      <section class="card section">
-        <h2><span style="font-size:18px; font-weight:700;">Statewide Breakdown by Party, Gender and Age</span></h2>
-        <p>Compact statewide views for party, gender, and age. Hover over any row in the data table to see a quick party popup for that geography.</p>
-        <div class="breakdown-grid">
+    <div class="breakdown-grid">
           <div class="breakdown-item">
             <div class="breakdown-label">Party</div>
             <div class="mini-chart breakdown-mini">
@@ -735,6 +675,68 @@
       <canvas id="rowPiePopupCanvas"></canvas>
     </div>
   </div>
+
+    <div class="grid">
+      <section class="card section">
+        <h2>Comparison View</h2>
+        <p>Use the dropdowns to switch geography, choose all voters or ballot activity views, and filter by party.</p>
+
+        <div class="toolbar">
+          <select id="dimensionSelect">
+            <option value="County">Break down by: County</option>
+            <option value="USC">Break down by: Congressional District</option>
+            <option value="STS">Break down by: State Senate District</option>
+            <option value="STH">Break down by: State House District</option>
+          </select>
+          <select id="ballotViewSelect">
+            <option value="all" selected>View: All voters</option>
+            <option value="applied">View: Applied for ballot</option>
+            <option value="returned">View: Returned ballot</option>
+          </select>
+          <select id="partyFilterSelect">
+            <option value="ALL">Party: All</option>
+            <option value="D">Party: Democrats</option>
+            <option value="R">Party: Republicans</option>
+            <option value="O">Party: Other</option>
+          </select>
+          <input id="searchBox" class="grow" type="text" placeholder="Search current view..." />
+          <select id="sortSelect">
+            <option value="label_asc">Sort: Geographic order</option>
+            <option value="total_desc">Sort: Total high to low</option>
+            <option value="total_asc">Sort: Total low to high</option>
+            <option value="label_desc">Sort: Reverse geographic order</option>
+            <option value="dem_desc">Sort: Democrats high to low</option>
+            <option value="rep_desc">Sort: Republicans high to low</option>
+            <option value="other_desc">Sort: Other high to low</option>
+          </select>
+          <select id="limitSelect">
+            <option value="10">Top 10</option>
+            <option value="25">Top 25</option>
+            <option value="50">Top 50</option>
+            <option value="9999">All</option>
+          </select>
+          <div class="toggle-group">
+            <button id="stackedBtn" class="active" type="button">Stacked</button>
+            <button id="groupedBtn" type="button">Grouped</button>
+          </div>
+          <button id="printReportBtn" type="button">Print PDF Report</button>
+        </div>
+
+        <div class="chart-wrap">
+          <canvas id="mainChart"></canvas>
+        </div>
+
+        <div class="legend-note">
+          <span><span class="dot" style="background:var(--brand-soft);"></span>Democrats</span>
+          <span><span class="dot" style="background:var(--other);"></span>Other</span>
+          <span><span class="dot" style="background:var(--brand);"></span>Republicans</span>
+        </div>
+      </section>
+
+      <section class="card section">
+        <h2><span style="font-size:18px; font-weight:700;">Statewide Breakdown by Party, Gender and Age</span></h2>
+        <p>Compact statewide views for party, gender, and age. Hover over any row in the data table to see a quick party popup for that geography.</p>
+        
 
   <script>
     // CHANGE THIS ONE LINE after you host the file:

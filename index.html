@@ -171,12 +171,15 @@
       background:#fff;
     }
     table {
+      font-size: 13px;
       width:100%;
       min-width:760px;
       border-collapse:collapse;
       background:#fff;
     }
     thead th {
+      padding:10px 12px;
+      font-size:13px;
       position:sticky;
       top:0;
       z-index:1;
@@ -188,6 +191,7 @@
       border-bottom:1px solid var(--line);
     }
     tbody td {
+      padding:10px 12px;
       padding:13px 16px;
       border-bottom:1px solid #efe8e3;
       font-size:15px;
@@ -284,6 +288,9 @@
       color:#a33a2f;
     }
     .benchmark-note {
+      position: relative;
+      z-index: 2;
+      padding-bottom: 4px;
       margin-top:8px;
       font-size:13px;
       color:var(--muted);
@@ -307,7 +314,87 @@
 .rate-low { background-color: #fdecea; }   /* light red */
 .rate-mid { background-color: #fff7e6; }   /* light yellow */
 .rate-high { background-color: #e6f4ea; }  /* light green */
+
+/* Sticky first column */
+#detailTable th:first-child,
+#detailTable td:first-child {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 3;
+  border-right: 1px solid #e5ddd7;
+}
+
+/* Ensure header stays above cells */
+#detailTable thead th:first-child {
+  z-index: 4;
+}
+
+
+/* Sticky header row + first column together */
+#detailTable thead th {
+  position: sticky;
+  top: 0;
+  background: var(--paper-soft);
+  z-index: 5;
+}
+
+#detailTable th:first-child,
+#detailTable td:first-child {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 3;
+  border-right: 1px solid #e5ddd7;
+}
+
+#detailTable thead th:first-child {
+  left: 0;
+  background: var(--paper-soft);
+  z-index: 6;
+}
+
 </style>
+
+
+/* Sticky first column */
+#detailTable th:first-child,
+#detailTable td:first-child {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 3;
+  border-right: 1px solid #e5ddd7;
+}
+
+/* Ensure header stays above cells */
+#detailTable thead th:first-child {
+  z-index: 4;
+}
+
+
+/* Sticky header row + first column together */
+#detailTable thead th {
+  position: sticky;
+  top: 0;
+  background: var(--paper-soft);
+  z-index: 5;
+}
+
+#detailTable th:first-child,
+#detailTable td:first-child {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 3;
+  border-right: 1px solid #e5ddd7;
+}
+
+#detailTable thead th:first-child {
+  left: 0;
+  background: var(--paper-soft);
+  z-index: 6;
+}
 
 </style>
 </head>
@@ -519,8 +606,8 @@
     <section class="card section">
       <h2 id="tableTitle">County Detail Table</h2>
       <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
-      <div id="detailBenchmarkNote" class="benchmark-note"></div>
-      <div class="toolbar" style="margin-top:-4px; margin-bottom:14px;">
+      <div id="detailBenchmarkNote" class="benchmark-note" style="margin-bottom:10px;"></div>
+      <div class="toolbar" style="margin-top:4px;" style="margin-top:-4px; margin-bottom:14px;">
         <div class="toggle-group">
           <button id="detailAppliedBtn" class="active" type="button">Applied View</button>
           <button id="detailReturnedBtn" type="button">Returned View</button>

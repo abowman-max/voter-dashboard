@@ -15,8 +15,8 @@
       --muted:#6b6b6b;
       --line:#e5ddd7;
       --brand:#8d0d0d;
-      --brand-soft:#cf7c7c;
-      --other:#d8bd93;
+      --brand-soft:#2f6fdf;
+      --other:#2fa84f;
       --shadow:0 12px 30px rgba(0,0,0,.06);
       --radius:22px;
     }
@@ -293,13 +293,13 @@
         <img src="https://static.wixstatic.com/media/b45117_afe41d8982634f35a4af7e1de54101cf~mv2.jpeg/v1/crop/x_0%2Cy_27%2Cw_828%2Ch_332/fill/w_828%2Ch_332%2Cal_c%2Cq_80%2Cenc_avif%2Cquality_auto/TSS%20Logo%20copy.jpeg" alt="Targeted Strategic Solutions logo" />
       </div>
       <div>
-        <h1>Voter Dashboard</h1>
+        <h1>TSS MIB Dashboard</h1>
         <p>
           Built to match the TSS site style and designed to update from a hosted <strong>DataTable.xlsx</strong> file.
           Users can switch the breakdown between County, Congressional District, State Senate District, and State House District
           without changing the layout, charts, or table.
         </p>
-        <div id="dataStatus" class="status-line">Loading hosted workbook…</div>
+        <div id="dataStatus" class="status-line">Last refreshed: loading…</div>
       </div>
     </section>
 
@@ -568,8 +568,8 @@
       data: {
         labels: [],
         datasets: [
-          { label: "Democrats", data: [], backgroundColor: "#cf7c7c", borderRadius: 6 },
-          { label: "Other", data: [], backgroundColor: "#d8bd93", borderRadius: 6 },
+          { label: "Democrats", data: [], backgroundColor: "#2f6fdf", borderRadius: 6 },
+          { label: "Other", data: [], backgroundColor: "#2fa84f", borderRadius: 6 },
           { label: "Republicans", data: [], backgroundColor: "#8d0d0d", borderRadius: 6 }
         ]
       },
@@ -687,7 +687,7 @@
 
     async function loadHostedWorkbook() {
       try {
-        setStatus(`Loading hosted workbook from <strong>${DATA_FILE_URL}</strong>…`);
+        setStatus(`Last refreshed: loading hosted workbook from <strong>${DATA_FILE_URL}</strong>…`);
         const response = await fetch(DATA_FILE_URL, { cache: "no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const arrayBuffer = await response.arrayBuffer();
@@ -697,10 +697,10 @@
         state.overallTotals = computeOverallTotals(rows);
         refreshView();
         const now = new Date();
-        setStatus(`Loaded <strong>${formatNum(rows.length)}</strong> source rows from hosted workbook. Last refreshed: <strong>${now.toLocaleString()}</strong>.`);
+        setStatus(`Last refreshed: <strong>${now.toLocaleString()}</strong>`);
       } catch (error) {
         console.error(error);
-        setStatus(`Could not load the hosted workbook. Make sure <strong>DataTable.xlsx</strong> is publicly reachable in the same hosted folder as this HTML file. Error: ${error.message}`);
+        setStatus(`Last refreshed: unavailable. Could not load the hosted workbook. Make sure <strong>DataTable.xlsx</strong> is publicly reachable in the same hosted folder as this HTML file. Error: ${error.message}`);
       }
     }
 
@@ -748,17 +748,17 @@
       const file = e.target.files[0];
       if (!file) return;
       try {
-        setStatus(`Loading local workbook <strong>${file.name}</strong>…`);
+        setStatus(`Last refreshed: loading local workbook <strong>${file.name}</strong>…`);
         const buffer = await file.arrayBuffer();
         const rows = parseWorkbookArrayBuffer(buffer);
         if (!rows.length) throw new Error("No usable rows found in workbook.");
         state.rawRows = rows;
         state.overallTotals = computeOverallTotals(rows);
         refreshView();
-        setStatus(`Loaded <strong>${formatNum(rows.length)}</strong> source rows from local workbook <strong>${file.name}</strong>.`);
+        setStatus(`Last refreshed: <strong>${new Date().toLocaleString()}</strong>`);
       } catch (error) {
         console.error(error);
-        setStatus(`Could not load local workbook. Error: ${error.message}`);
+        setStatus(`Last refreshed: unavailable. Could not load local workbook. Error: ${error.message}`);
       }
     });
 

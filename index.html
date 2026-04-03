@@ -6,6 +6,7 @@
   <title>TSS MIB Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-geo@4.3.6/build/index.umd.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -546,7 +547,7 @@
         </select>
       </div>
       <div class="heat-map-wrap">
-        <canvas id="heatMapCanvas" class="heat-map-canvas"></canvas>
+        <div id="heatMapCanvas" class="heat-map-canvas"></div>
       </div>
       <div class="foot" id="heatMapStatus">County heat map loading…</div>
     </section>
@@ -965,21 +966,21 @@
     }
 
     function destroyHeatMapChart() {
-      if (heatMapChart) {
-        heatMapChart.destroy();
-        heatMapChart = null;
+      const container = document.getElementById("heatMapCanvas");
+      if (container && window.Plotly) {
+        try { Plotly.purge(container); } catch (e) {}
       }
+      heatMapChart = null;
     }
 
     async function renderHeatMap() {
       const statusEl = document.getElementById("heatMapStatus");
-      const canvas = document.getElementById("heatMapCanvas");
-      if (!statusEl || !canvas) return;
+      const container = document.getElementById("heatMapCanvas");
+      if (!statusEl || !container) return;
 
       if (state.dimension !== "County") {
         destroyHeatMapChart();
-        const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        container.innerHTML = "";
         statusEl.textContent = "Heat map is available for County view only right now. Switch the geography filter to County to see the Pennsylvania map.";
         return;
       }
@@ -989,76 +990,83 @@
         const metric = document.getElementById("heatMetricSelect").value;
         const geojson = await ensureCountyGeojsonLoaded();
         const aggregated = aggregateByDimension(state.rawRows, "County");
-        const valueMap = new Map();
 
-        aggregated.forEach(row => {
-          valueMap.set(normalizeCountyMapLabel(row.label), getHeatMetricValue(row, metric));
+        const fips = [];
+        const zvals = [];
+        const labels = [];
+
+        (geojson.features || []).forEach(feature => {
+          const countyName = normalizeCountyMapLabel(feature.properties?.name || "");
+          const row = aggregated.find(r => normalizeCountyMapLabel(r.label) === countyName);
+          const value = row ? getHeatMetricValue(row, metric) : 0;
+          fips.push(String(feature.id));
+          zvals.push(Number(value || 0));
+          labels.push(feature.properties?.name || countyName);
         });
 
-        const data = geojson.features.map(feature => ({
-          feature,
-          value: valueMap.get(normalizeCountyMapLabel(feature.properties?.name || "")) || 0
-        }));
-
-        const maxValue = Math.max(...data.map(d => Number(d.value || 0)), 0);
         destroyHeatMapChart();
 
-        const ctx = canvas.getContext("2d");
-        heatMapChart = new Chart(ctx, {
-          type: "choropleth",
-          data: {
-            labels: data.map(d => d.feature.properties.name),
-            datasets: [{
-              label: "County Heat Map",
-              data
-            }]
-          },
-          options: {
-            maintainAspectRatio: false,
-            showOutline: true,
-            showGraticule: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  title: (items) => items[0]?.raw?.feature?.properties?.name || "",
-                  label: (context) => {
-                    const value = Number(context.raw?.value || 0);
-                    const isRate = metric === "return_rate";
-                    const label = document.getElementById("heatMetricSelect").selectedOptions[0].text.replace("Heat Map Metric: ","");
-                    return `${label}: ${isRate ? value.toFixed(1) + "%" : formatNum(value)}`;
-                  }
-                }
-              }
-            },
-            outline: geojson,
-            scales: {
-              projection: {
-                axis: "x",
-                projection: "mercator",
-                padding: 12
-              },
-              color: {
-                axis: "x",
-                quantize: 5,
-                interpolate: (v) => {
-                  if (metric === "return_rate") {
-                    if (v < 0.5) return `rgba(${245}, ${182 + Math.round(v*80)}, ${173 - Math.round(v*40)}, 0.95)`;
-                    return `rgba(${230 - Math.round((v-0.5)*140)}, ${220}, ${160 - Math.round((v-0.5)*60)}, 0.95)`;
-                  }
-                  return `rgba(${245 - Math.round(v*90)}, ${232 - Math.round(v*160)}, ${229 - Math.round(v*170)}, 0.95)`;
-                }
-              }
-            }
-          }
-        });
-
         const metricLabel = document.getElementById("heatMetricSelect").selectedOptions[0].text.replace("Heat Map Metric: ","");
+        const isRate = metric === "return_rate";
+
+        const trace = {
+          type: "choropleth",
+          geojson: geojson,
+          featureidkey: "id",
+          locations: fips,
+          z: zvals,
+          text: labels,
+          colorscale: isRate
+            ? [
+                [0.0, "#f5b6ad"],
+                [0.5, "#f3e7a6"],
+                [1.0, "#bfe3bf"]
+              ]
+            : [
+                [0.0, "#f5e8e5"],
+                [0.35, "#e7c8bf"],
+                [0.7, "#cf8f7f"],
+                [1.0, "#8d0d0d"]
+              ],
+          marker: {
+            line: {
+              color: "#ffffff",
+              width: 0.8
+            }
+          },
+          colorbar: {
+            title: metricLabel,
+            thickness: 12
+          },
+          hovertemplate: "<b>%{text}</b><br>" + metricLabel + ": %{z:.1f}" + (isRate ? "%" : "") + "<extra></extra>"
+        };
+
+        const layout = {
+          margin: {l: 0, r: 0, t: 0, b: 0},
+          geo: {
+            scope: "usa",
+            fitbounds: "locations",
+            visible: false,
+            bgcolor: "rgba(0,0,0,0)"
+          },
+          paper_bgcolor: "rgba(0,0,0,0)",
+          plot_bgcolor: "rgba(0,0,0,0)"
+        };
+
+        const config = {
+          responsive: true,
+          displayModeBar: false
+        };
+
+        await Plotly.newPlot(container, [trace], layout, config);
+
+        const maxValue = Math.max(...zvals, 0);
         statusEl.textContent = maxValue > 0
-          ? `Showing zoomed Pennsylvania county heat map for ${metricLabel.toLowerCase()} using the current dashboard filters.`
+          ? `Showing Pennsylvania county heat map for ${metricLabel.toLowerCase()} using the current dashboard filters.`
           : `No county values were available for ${metricLabel.toLowerCase()} under the current filters.`;
       } catch (error) {
         destroyHeatMapChart();
+        container.innerHTML = "";
         statusEl.textContent = "The county heat map could not be loaded right now.";
         console.error(error);
       }

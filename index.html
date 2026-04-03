@@ -340,10 +340,10 @@
           </select>
           <input id="searchBox" class="grow" type="text" placeholder="Search current view..." />
           <select id="sortSelect">
+            <option value="label_asc">Sort: Geographic order</option>
             <option value="total_desc">Sort: Total high to low</option>
             <option value="total_asc">Sort: Total low to high</option>
-            <option value="label_asc">Sort: A–Z</option>
-            <option value="label_desc">Sort: Z–A</option>
+            <option value="label_desc">Sort: Reverse geographic order</option>
             <option value="dem_desc">Sort: Democrats high to low</option>
             <option value="rep_desc">Sort: Republicans high to low</option>
             <option value="other_desc">Sort: Other high to low</option>
@@ -385,7 +385,7 @@
 
     <section class="card section" style="margin-top:22px;">
       <h2 id="tableTitle">County Detail Table</h2>
-      <p id="tableSubtitle">Rows update automatically based on the selected geography.</p>
+      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list.</p>
       <div class="table-wrap">
         <table id="detailTable">
           <thead>
@@ -444,7 +444,7 @@
       mode: "stacked",
       dimension: "County",
       search: "",
-      sort: "total_desc",
+      sort: "label_asc",
       limit: 10,
       overallTotals: { D: 0, O: 0, R: 0, Total: 0 }
     };
@@ -504,21 +504,42 @@
       return Array.from(map.values());
     }
 
+    function compareGeoLabels(a, b, dimension, direction = "asc") {
+      const av = String(a.label ?? "");
+      const bv = String(b.label ?? "");
+      const multiplier = direction === "desc" ? -1 : 1;
+
+      if (dimension === "County") {
+        return av.localeCompare(bv, undefined, { sensitivity: "base" }) * multiplier;
+      }
+
+      const an = Number(av);
+      const bn = Number(bv);
+      const aIsNum = !Number.isNaN(an);
+      const bIsNum = !Number.isNaN(bn);
+
+      if (aIsNum && bIsNum) {
+        if (an !== bn) return (an - bn) * multiplier;
+        return av.localeCompare(bv, undefined, { numeric: true, sensitivity: "base" }) * multiplier;
+      }
+
+      return av.localeCompare(bv, undefined, { numeric: true, sensitivity: "base" }) * multiplier;
+    }
+
     function getFilteredRows() {
-      const meta = dimensionMeta[state.dimension];
       let rows = aggregateByDimension(state.rawRows, state.dimension);
 
       rows = rows.filter(r => r.label.toLowerCase().includes(state.search.toLowerCase()));
 
-      if (state.sort === "total_desc") rows.sort((a,b) => b.Total - a.Total || a.label.localeCompare(b.label));
-      if (state.sort === "total_asc") rows.sort((a,b) => a.Total - b.Total || a.label.localeCompare(b.label));
-      if (state.sort === "label_asc") rows.sort((a,b) => a.label.localeCompare(b.label, undefined, {numeric:true}));
-      if (state.sort === "label_desc") rows.sort((a,b) => b.label.localeCompare(a.label, undefined, {numeric:true}));
-      if (state.sort === "dem_desc") rows.sort((a,b) => b.D - a.D || a.label.localeCompare(b.label));
-      if (state.sort === "rep_desc") rows.sort((a,b) => b.R - a.R || a.label.localeCompare(b.label));
-      if (state.sort === "other_desc") rows.sort((a,b) => b.O - a.O || a.label.localeCompare(b.label));
+      if (state.sort === "label_asc") rows.sort((a,b) => compareGeoLabels(a, b, state.dimension, "asc"));
+      if (state.sort === "label_desc") rows.sort((a,b) => compareGeoLabels(a, b, state.dimension, "desc"));
+      if (state.sort === "total_desc") rows.sort((a,b) => b.Total - a.Total || compareGeoLabels(a, b, state.dimension, "asc"));
+      if (state.sort === "total_asc") rows.sort((a,b) => a.Total - b.Total || compareGeoLabels(a, b, state.dimension, "asc"));
+      if (state.sort === "dem_desc") rows.sort((a,b) => b.D - a.D || compareGeoLabels(a, b, state.dimension, "asc"));
+      if (state.sort === "rep_desc") rows.sort((a,b) => b.R - a.R || compareGeoLabels(a, b, state.dimension, "asc"));
+      if (state.sort === "other_desc") rows.sort((a,b) => b.O - a.O || compareGeoLabels(a, b, state.dimension, "asc"));
 
-      return rows.slice(0, state.limit);
+      return rows;
     }
 
     function updateHeaderText() {
@@ -640,12 +661,13 @@
       updateHeaderText();
       updateCards();
 
-      const rows = getFilteredRows();
+      const allRows = getFilteredRows();
+      const chartRows = allRows.slice(0, state.limit);
 
-      mainChart.data.labels = rows.map(r => r.label);
-      mainChart.data.datasets[0].data = rows.map(r => r.D);
-      mainChart.data.datasets[1].data = rows.map(r => r.O);
-      mainChart.data.datasets[2].data = rows.map(r => r.R);
+      mainChart.data.labels = chartRows.map(r => r.label);
+      mainChart.data.datasets[0].data = chartRows.map(r => r.D);
+      mainChart.data.datasets[1].data = chartRows.map(r => r.O);
+      mainChart.data.datasets[2].data = chartRows.map(r => r.R);
       mainChart.options.scales.x.stacked = state.mode === "stacked";
       mainChart.options.scales.y.stacked = state.mode === "stacked";
       mainChart.update();
@@ -653,7 +675,7 @@
       donutChart.data.datasets[0].data = [state.overallTotals.D, state.overallTotals.O, state.overallTotals.R];
       donutChart.update();
 
-      renderTable(rows);
+      renderTable(allRows);
     }
 
     function parseWorkbookArrayBuffer(arrayBuffer) {
@@ -684,6 +706,8 @@
 
     document.getElementById("dimensionSelect").addEventListener("change", (e) => {
       state.dimension = e.target.value;
+      state.sort = "label_asc";
+      document.getElementById("sortSelect").value = "label_asc";
       refreshView();
     });
 

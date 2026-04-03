@@ -233,6 +233,13 @@
       padding:14px 16px;
       border-bottom:1px solid var(--line);
     }
+    tfoot th, tfoot td {
+      background:#f7f3f1;
+      color:var(--brand);
+      font-weight:700;
+      border-top:2px solid var(--line);
+      padding:13px 16px;
+    }
     tbody td {
       padding:13px 16px;
       border-bottom:1px solid #efe8e3;
@@ -474,7 +481,7 @@
 
     <section class="card section" style="margin-bottom:22px;">
       <h2>Daily Change</h2>
-      <p>New ballot activity since the previous day’s file. This compares the current <strong>DataTable.xlsx</strong> against a hosted <strong>PreviousDataTable.xlsx</strong> and breaks the change out by party using the dashboard color scheme.</p>
+      <p>New ballot activity since the previous day’s file. This compares the current <strong>DataTable.xlsx</strong> against a hosted <strong>PreviousDataTable.xlsx</strong> and organizes it by party with applied, returned, and return-rate columns.</p>
       <div class="grid" style="grid-template-columns: 1.2fr .8fr; gap:18px;">
         <div>
           <div class="mini-chart" style="height:240px;">
@@ -1286,19 +1293,40 @@
       dailyChangeChart.data.datasets[2].data = [state.dailyDelta.appliedByParty.O, state.dailyDelta.returnedByParty.O];
       dailyChangeChart.update();
 
-      document.getElementById("dailyAppliedDValue").textContent = (state.dailyDelta.appliedByParty.D > 0 ? "+" : "") + formatNum(state.dailyDelta.appliedByParty.D);
-      document.getElementById("dailyAppliedRValue").textContent = (state.dailyDelta.appliedByParty.R > 0 ? "+" : "") + formatNum(state.dailyDelta.appliedByParty.R);
-      document.getElementById("dailyAppliedOValue").textContent = (state.dailyDelta.appliedByParty.O > 0 ? "+" : "") + formatNum(state.dailyDelta.appliedByParty.O);
-      document.getElementById("dailyReturnedDValue").textContent = (state.dailyDelta.returnedByParty.D > 0 ? "+" : "") + formatNum(state.dailyDelta.returnedByParty.D);
-      document.getElementById("dailyReturnedRValue").textContent = (state.dailyDelta.returnedByParty.R > 0 ? "+" : "") + formatNum(state.dailyDelta.returnedByParty.R);
-      document.getElementById("dailyReturnedOValue").textContent = (state.dailyDelta.returnedByParty.O > 0 ? "+" : "") + formatNum(state.dailyDelta.returnedByParty.O);
+      const ad = state.dailyDelta.appliedByParty.D;
+      const ar = state.dailyDelta.appliedByParty.R;
+      const ao = state.dailyDelta.appliedByParty.O;
+      const rd = state.dailyDelta.returnedByParty.D;
+      const rr = state.dailyDelta.returnedByParty.R;
+      const ro = state.dailyDelta.returnedByParty.O;
+
+      const fmtSigned = (n) => (n > 0 ? "+" : "") + formatNum(n);
+      const rate = (returned, applied) => {
+        if (!applied || applied === 0) return "—";
+        return ((returned / applied) * 100).toFixed(1) + "%";
+      };
+
+      document.getElementById("dailyAppliedDValue").textContent = fmtSigned(ad);
+      document.getElementById("dailyAppliedRValue").textContent = fmtSigned(ar);
+      document.getElementById("dailyAppliedOValue").textContent = fmtSigned(ao);
+      document.getElementById("dailyReturnedDValue").textContent = fmtSigned(rd);
+      document.getElementById("dailyReturnedRValue").textContent = fmtSigned(rr);
+      document.getElementById("dailyReturnedOValue").textContent = fmtSigned(ro);
+
+      document.getElementById("dailyRateDValue").textContent = rate(rd, ad);
+      document.getElementById("dailyRateRValue").textContent = rate(rr, ar);
+      document.getElementById("dailyRateOValue").textContent = rate(ro, ao);
+
+      document.getElementById("dailyAppliedTotalValue").textContent = fmtSigned(state.dailyDelta.applied);
+      document.getElementById("dailyReturnedTotalValue").textContent = fmtSigned(state.dailyDelta.returned);
+      document.getElementById("dailyRateTotalValue").textContent = rate(state.dailyDelta.returned, state.dailyDelta.applied);
 
       const partyText = state.partyFilter === "ALL" ? "all parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
       if (state.ballotView === "all") {
-        document.getElementById("dailyChangeStatus").textContent = "Daily change compares applied and returned activity versus PreviousDataTable.xlsx and breaks both out by party.";
+        document.getElementById("dailyChangeStatus").textContent = "Daily change compares current and previous files by party, with statewide totals and return rates.";
       } else {
         document.getElementById("dailyChangeStatus").textContent = state.dailyDelta.hasPrevious
-          ? `Daily change shown versus PreviousDataTable.xlsx for ${partyText}, with party-color breakdowns.`
+          ? `Daily change shown versus PreviousDataTable.xlsx for ${partyText}, with applied, returned, and return-rate columns.`
           : `To show daily change, upload a previous-day file named PreviousDataTable.xlsx in the same GitHub folder.`;
       }
 

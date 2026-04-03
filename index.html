@@ -1070,7 +1070,15 @@
       if (dimension === "County") {
         return normalizeCountyMapLabel(props.name || props.NAME || "");
       }
-      const raw = props.LEG_DISTRI ?? props.leg_distri ?? props.DISTRICT ?? props.DIST_NUM ?? props.DISTRICT_NO ?? props.DIST ?? "";
+      const raw =
+        props.district ??
+        props.DISTRICT ??
+        props.LEG_DISTRI ??
+        props.leg_distri ??
+        props.DIST_NUM ??
+        props.DISTRICT_NO ??
+        props.DIST ??
+        "";
       return normalizeLabel(raw);
     }
 

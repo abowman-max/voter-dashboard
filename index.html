@@ -45,7 +45,7 @@
     }
     .nav {
       display:flex;
-      gap:28px;
+      gap:14px;
       flex-wrap:wrap;
       color:var(--muted);
       font-size:15px;
@@ -69,7 +69,7 @@
     .hero {
       display:grid;
       grid-template-columns:250px 1fr;
-      gap:28px;
+      gap:14px;
       padding:28px;
       align-items:center;
     }
@@ -77,8 +77,8 @@
       background:var(--paper-soft);
       border:1px solid var(--line);
       border-radius:20px;
-      padding:18px;
-      min-height:150px;
+      padding:10px;
+      min-height:90px;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -91,18 +91,18 @@
     .hero h1 {
       margin:0 0 10px 0;
       color:var(--brand);
-      font-size:42px;
+      font-size:28px;
       line-height:1.06;
     }
     .hero p {
       margin:0;
       color:var(--muted);
-      font-size:17px;
-      line-height:1.65;
+      font-size:14px;
+      line-height:1.4;
       max-width:850px;
     }
     .status-line {
-      margin-top:14px;
+      margin-top:6px;
       font-size:13px;
       color:var(--muted);
     }
@@ -249,7 +249,7 @@
       color:var(--brand);
     }
     .foot {
-      margin-top:14px;
+      margin-top:6px;
       color:var(--muted);
       font-size:13px;
     }
@@ -264,6 +264,105 @@
       font:inherit;
       padding:0;
       text-decoration:underline;
+    }
+    #printReportBtn {
+      border:1px solid var(--brand);
+      background:var(--brand);
+      color:#fff;
+      border-radius:12px;
+      padding:10px 14px;
+      font-size:14px;
+      min-height:42px;
+      cursor:pointer;
+      font-weight:600;
+    }
+    #printReportBtn:hover {
+      opacity:.92;
+    }
+    .print-only {
+      display:none;
+    }
+    .screen-only {
+      display:block;
+    }
+    @media print {
+      @page {
+        size: letter portrait;
+        margin: 0.5in;
+      }
+      body {
+        background:#fff !important;
+      }
+      .page {
+        max-width:none;
+        padding:0;
+      }
+      .screen-only {
+        display:none !important;
+      }
+      .print-only {
+        display:block !important;
+      }
+      .card, .section, .hero, .stats, .grid, .table-wrap {
+        box-shadow:none !important;
+        border:0 !important;
+        background:#fff !important;
+      }
+      .hero {
+        padding:0 0 12px 0 !important;
+        display:block !important;
+      }
+      .hero-logo {
+        display:none !important;
+      }
+      .stats {
+        display:grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap:10px !important;
+        margin: 0 0 14px 0 !important;
+      }
+      .stat {
+        padding:10px 12px !important;
+        border:1px solid #ccc !important;
+        border-radius:10px !important;
+      }
+      .stat .value {
+        font-size:20px !important;
+        color:#000 !important;
+      }
+      .stat .label {
+        color:#444 !important;
+      }
+      .grid {
+        display:block !important;
+      }
+      .section {
+        padding:0 !important;
+        margin:0 0 16px 0 !important;
+      }
+      .chart-wrap, .mini-chart {
+        height:260px !important;
+        page-break-inside:avoid;
+      }
+      table {
+        min-width:0 !important;
+        font-size:11px !important;
+      }
+      thead th {
+        position:static !important;
+        background:#f2f2f2 !important;
+        color:#000 !important;
+      }
+      tbody td, thead th {
+        padding:6px 8px !important;
+        border:1px solid #ddd !important;
+      }
+      .foot, .status-line {
+        color:#444 !important;
+      }
+      #detailTable tbody tr {
+        page-break-inside:avoid;
+      }
     }
     @media (max-width:1080px) {
       .grid { grid-template-columns:1fr; }
@@ -283,6 +382,14 @@
       
       
     </div>
+
+    <section class="print-only" id="printHeader">
+      <div style="border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:14px;">
+        <div style="font-size:24px; font-weight:700; margin-bottom:4px;">TSS MIB Dashboard Report</div>
+        <div id="printContextLine" style="font-size:12px; color:#333; margin-bottom:4px;"></div>
+        <div id="printUpdatedLine" style="font-size:12px; color:#333;"></div>
+      </div>
+    </section>
 
     <section class="card hero">
       <div class="hero-logo">
@@ -320,10 +427,33 @@
       </div>
     </section>
 
+    <section class="card section" style="margin-bottom:22px;">
+      <h2>Daily Change</h2>
+      <p>New ballot activity since the previous day’s file. This compares the current <strong>DataTable.xlsx</strong> against a hosted <strong>PreviousDataTable.xlsx</strong>.</p>
+      <div class="grid" style="grid-template-columns: 1.2fr .8fr; gap:18px;">
+        <div>
+          <div class="mini-chart" style="height:240px;">
+            <canvas id="dailyChangeChart"></canvas>
+          </div>
+        </div>
+        <div class="stats" style="grid-template-columns:repeat(2,1fr); margin:0;">
+          <div class="card stat">
+            <div class="label">New Applications</div>
+            <div class="value" id="dailyAppliedValue">—</div>
+          </div>
+          <div class="card stat">
+            <div class="label">New Returns</div>
+            <div class="value" id="dailyReturnedValue">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="foot" id="dailyChangeStatus">Daily change comparison not loaded yet.</div>
+    </section>
+
     <div class="grid">
       <section class="card section">
         <h2>Comparison View</h2>
-        <p>Use the first dropdown to switch the dashboard between County, Congressional District, State Senate District, and State House District.</p>
+        <p>Use the dropdowns to switch geography, toggle between applied and returned ballot views, and filter by party.</p>
 
         <div class="toolbar">
           <select id="dimensionSelect">
@@ -331,6 +461,16 @@
             <option value="USC">Break down by: Congressional District</option>
             <option value="STS">Break down by: State Senate District</option>
             <option value="STH">Break down by: State House District</option>
+          </select>
+          <select id="ballotViewSelect">
+            <option value="applied">View: Applied for ballot</option>
+            <option value="returned">View: Returned ballot</option>
+          </select>
+          <select id="partyFilterSelect">
+            <option value="ALL">Party: All</option>
+            <option value="D">Party: Democrats</option>
+            <option value="R">Party: Republicans</option>
+            <option value="O">Party: Other</option>
           </select>
           <input id="searchBox" class="grow" type="text" placeholder="Search current view..." />
           <select id="sortSelect">
@@ -352,6 +492,7 @@
             <button id="stackedBtn" class="active" type="button">Stacked</button>
             <button id="groupedBtn" type="button">Grouped</button>
           </div>
+          <button id="printReportBtn" type="button">Print PDF Report</button>
         </div>
 
         <div class="chart-wrap">
@@ -379,15 +520,18 @@
 
     <section class="card section" style="margin-top:22px;">
       <h2 id="tableTitle">County Detail Table</h2>
-      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list.</p>
+      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
       <div class="table-wrap">
         <table id="detailTable">
           <thead>
             <tr>
               <th id="firstColHeader">County</th>
               <th class="num">Democrats</th>
+              <th class="num">Dem %</th>
               <th class="num">Other</th>
+              <th class="num">Other %</th>
               <th class="num">Republicans</th>
+              <th class="num">Rep %</th>
               <th class="num">Total</th>
             </tr>
           </thead>
@@ -405,6 +549,7 @@
   <script>
     // CHANGE THIS ONE LINE after you host the file:
     const DATA_FILE_URL = "./DataTable.xlsx";
+    const PREVIOUS_DATA_FILE_URL = "./PreviousDataTable.xlsx";
 
     const dimensionMeta = {
       County: {
@@ -440,7 +585,11 @@
       search: "",
       sort: "label_asc",
       limit: 10,
-      overallTotals: { D: 0, O: 0, R: 0, Total: 0 }
+      overallTotals: { D: 0, O: 0, R: 0, Total: 0 },
+      ballotView: "applied",
+      partyFilter: "ALL",
+      previousRows: [],
+      dailyDelta: { applied: 0, returned: 0, hasPrevious: false }
     };
 
     const formatNum = (n) => Number(n || 0).toLocaleString();
@@ -471,6 +620,8 @@
           STS: normalizeLabel(r["STS"]),
           STH: normalizeLabel(r["STH"]),
           Party: safeParty(r["Party"]),
+          AppStatus: String(r["App Status"] ?? "").trim(),
+          BallotStatus: String(r["Ballot Status"] ?? "").trim(),
           Voters: Number(r["Voters"] ?? 0) || 0
         }))
         .filter(r => r.Voters > 0 && (r.County || r.USC || r.STS || r.STH));
@@ -485,9 +636,27 @@
       return totals;
     }
 
+    function isAppliedRow(row) {
+      return String(row.AppStatus || "").toLowerCase() === "approved";
+    }
+
+    function isReturnedRow(row) {
+      const status = String(row.BallotStatus || "").toLowerCase();
+      return status && status !== "not returned";
+    }
+
+    function getViewFilteredRows(rows) {
+      return rows.filter(r => {
+        const matchesBallotView = state.ballotView === "returned" ? isReturnedRow(r) : isAppliedRow(r);
+        const matchesParty = state.partyFilter === "ALL" ? true : r.Party === state.partyFilter;
+        return matchesBallotView && matchesParty;
+      });
+    }
+
     function aggregateByDimension(rows, dimension) {
+      const filteredRows = getViewFilteredRows(rows);
       const map = new Map();
-      rows.forEach(r => {
+      filteredRows.forEach(r => {
         const key = normalizeLabel(r[dimension]);
         if (!key) return;
         if (!map.has(key)) map.set(key, { label: key, D: 0, O: 0, R: 0, Total: 0 });
@@ -535,23 +704,83 @@
 
       return rows;
     }
+    function buildRowKey(row, includeBallotView) {
+      const ballotPart = includeBallotView ? (isReturnedRow(row) ? "returned" : (isAppliedRow(row) ? "applied" : "other")) : "all";
+      return [
+        normalizeLabel(row.County),
+        normalizeLabel(row.USC),
+        normalizeLabel(row.STS),
+        normalizeLabel(row.STH),
+        row.Party,
+        ballotPart
+      ].join("|");
+    }
+
+    function getRowsForDailyDelta(rows, ballotView) {
+      return rows.filter(r => {
+        const matchesParty = state.partyFilter === "ALL" ? true : r.Party === state.partyFilter;
+        const matchesBallotView = ballotView === "returned" ? isReturnedRow(r) : isAppliedRow(r);
+        return matchesParty && matchesBallotView;
+      });
+    }
+
+    function computeDeltaForBallotView(currentRows, previousRows, ballotView) {
+      const currentMap = new Map();
+      const previousMap = new Map();
+
+      getRowsForDailyDelta(currentRows, ballotView).forEach(r => {
+        const key = buildRowKey(r, false);
+        currentMap.set(key, (currentMap.get(key) || 0) + r.Voters);
+      });
+
+      getRowsForDailyDelta(previousRows, ballotView).forEach(r => {
+        const key = buildRowKey(r, false);
+        previousMap.set(key, (previousMap.get(key) || 0) + r.Voters);
+      });
+
+      const allKeys = new Set([...currentMap.keys(), ...previousMap.keys()]);
+      let delta = 0;
+      allKeys.forEach(key => {
+        delta += (currentMap.get(key) || 0) - (previousMap.get(key) || 0);
+      });
+      return delta;
+    }
+
+    function computeDailyDelta() {
+      if (!state.previousRows.length) {
+        return { applied: 0, returned: 0, hasPrevious: false };
+      }
+      return {
+        applied: computeDeltaForBallotView(state.rawRows, state.previousRows, "applied"),
+        returned: computeDeltaForBallotView(state.rawRows, state.previousRows, "returned"),
+        hasPrevious: true
+      };
+    }
 
     function updateHeaderText() {
       const meta = dimensionMeta[state.dimension];
       document.getElementById("firstColHeader").textContent = meta.label;
       document.getElementById("tableTitle").textContent = meta.title;
-      document.getElementById("tableSubtitle").textContent = `Rows update automatically based on the selected geography: ${meta.label}.`;
+      const viewText = state.ballotView === "returned" ? "returned ballots" : "applied ballots";
+      const partyText = state.partyFilter === "ALL" ? "all parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
+      document.getElementById("tableSubtitle").textContent = `Rows update automatically based on ${meta.label}, ${viewText}, and ${partyText}.`;
       document.getElementById("searchBox").placeholder = meta.searchPlaceholder;
       const groupCount = aggregateByDimension(state.rawRows, state.dimension).length;
       document.getElementById("groupCountLabel").textContent = meta.groupLabel;
       document.getElementById("groupCountValue").textContent = formatNum(groupCount);
     }
 
+    function computeVisibleTotals() {
+      const filteredRows = getViewFilteredRows(state.rawRows);
+      return computeOverallTotals(filteredRows);
+    }
+
     function updateCards() {
-      document.getElementById("demTotal").textContent = formatNum(state.overallTotals.D);
-      document.getElementById("otherTotal").textContent = formatNum(state.overallTotals.O);
-      document.getElementById("repTotal").textContent = formatNum(state.overallTotals.R);
-      document.getElementById("grandTotal").textContent = formatNum(state.overallTotals.Total);
+      const visibleTotals = computeVisibleTotals();
+      document.getElementById("demTotal").textContent = formatNum(visibleTotals.D);
+      document.getElementById("otherTotal").textContent = formatNum(visibleTotals.O);
+      document.getElementById("repTotal").textContent = formatNum(visibleTotals.R);
+      document.getElementById("grandTotal").textContent = formatNum(visibleTotals.Total);
     }
 
     const mainCtx = document.getElementById("mainChart").getContext("2d");
@@ -638,17 +867,72 @@
       }
     });
 
+    const dailyCtx = document.getElementById("dailyChangeChart").getContext("2d");
+
+    const dailyChangeChart = new Chart(dailyCtx, {
+      type: "bar",
+      data: {
+        labels: ["New Applications", "New Returns"],
+        datasets: [{
+          label: "Change Since Previous Day",
+          data: [0, 0],
+          backgroundColor: ["#2f6fdf", "#8d0d0d"],
+          borderRadius: 8
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const val = Number(context.raw || 0);
+                const prefix = val > 0 ? "+" : "";
+                return `${prefix}${formatNum(val)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: "#555" },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: false,
+            ticks: {
+              color: "#555",
+              callback: function(value) {
+                const val = Number(value || 0);
+                return `${val > 0 ? "+" : ""}${formatNum(val)}`;
+              }
+            },
+            grid: { color: "#eee7e3" }
+          }
+        }
+      }
+    });
+
     function renderTable(rows) {
       const tbody = document.querySelector("#detailTable tbody");
-      tbody.innerHTML = rows.map(r => `
+      tbody.innerHTML = rows.map(r => {
+        const demPct = r.Total ? ((r.D / r.Total) * 100).toFixed(1) : "0.0";
+        const otherPct = r.Total ? ((r.O / r.Total) * 100).toFixed(1) : "0.0";
+        const repPct = r.Total ? ((r.R / r.Total) * 100).toFixed(1) : "0.0";
+        return `
         <tr>
           <td>${r.label}</td>
           <td class="num">${formatNum(r.D)}</td>
+          <td class="num">${demPct}%</td>
           <td class="num">${formatNum(r.O)}</td>
+          <td class="num">${otherPct}%</td>
           <td class="num">${formatNum(r.R)}</td>
+          <td class="num">${repPct}%</td>
           <td class="num total">${formatNum(r.Total)}</td>
         </tr>
-      `).join("");
+      `;
+      }).join("");
     }
 
     function refreshView() {
@@ -666,22 +950,85 @@
       mainChart.options.scales.y.stacked = state.mode === "stacked";
       mainChart.update();
 
-      donutChart.data.datasets[0].data = [state.overallTotals.D, state.overallTotals.O, state.overallTotals.R];
+      const visibleTotals = computeVisibleTotals();
+      donutChart.data.datasets[0].data = [visibleTotals.D, visibleTotals.O, visibleTotals.R];
       donutChart.update();
 
       renderTable(allRows);
+
+      state.dailyDelta = computeDailyDelta();
+      dailyChangeChart.data.datasets[0].data = [state.dailyDelta.applied, state.dailyDelta.returned];
+      dailyChangeChart.update();
+
+      document.getElementById("dailyAppliedValue").textContent = (state.dailyDelta.applied > 0 ? "+" : "") + formatNum(state.dailyDelta.applied);
+      document.getElementById("dailyReturnedValue").textContent = (state.dailyDelta.returned > 0 ? "+" : "") + formatNum(state.dailyDelta.returned);
+
+      const partyText = state.partyFilter === "ALL" ? "all parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
+      document.getElementById("dailyChangeStatus").textContent = state.dailyDelta.hasPrevious
+        ? `Daily change shown versus PreviousDataTable.xlsx for ${partyText}.`
+        : `To show daily change, upload a previous-day file named PreviousDataTable.xlsx in the same GitHub folder.`;
+
+      updatePrintContext();
     }
 
     function parseWorkbookArrayBuffer(arrayBuffer) {
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+      const preferredSheet = workbook.Sheets["DataTable"] || workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(preferredSheet, { defval: "" });
       return hydrateRows(rows);
+    }
+
+    async function loadPreviousWorkbook() {
+      try {
+        const response = await fetch(PREVIOUS_DATA_FILE_URL, { method: "GET", cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const arrayBuffer = await response.arrayBuffer();
+        const rows = parseWorkbookArrayBuffer(arrayBuffer);
+        state.previousRows = rows;
+      } catch (error) {
+        console.warn("Previous workbook not loaded:", error);
+        state.previousRows = [];
+      }
     }
 
     async function loadHostedWorkbook() {
       try {
-        setStatus(`Last refreshed: loading hosted workbook from <strong>${DATA_FILE_URL}</strong>…`);
+        setStatus(`Checking file timestamp…`);
+        const response = await fetch(DATA_FILE_URL, { method: "GET", cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const lastModified = response.headers.get("Last-Modified");
+
+        const arrayBuffer = await response.arrayBuffer();
+        const rows = parseWorkbookArrayBuffer(arrayBuffer);
+        if (!rows.length) throw new Error("No usable rows found in workbook.");
+
+        state.rawRows = rows;
+        state.overallTotals = computeOverallTotals(rows);
+
+        await loadPreviousWorkbook();
+        refreshView();
+
+        if (lastModified) {
+          const date = new Date(lastModified);
+          setStatus(`Last updated: <strong>${date.toLocaleString()}</strong>`);
+        } else {
+          setStatus(`Last updated: unavailable (no timestamp from server)`);
+        }
+
+      } catch (error) {
+        console.error(error);
+        setStatus(`Last updated: unavailable. Error loading DataTable.xlsx`);
+      }
+    } else {
+          setStatus(`Last updated: unavailable (no timestamp from server)`);
+        }
+
+      } catch (error) {
+        console.error(error);
+        setStatus(`Last updated: unavailable. Error loading DataTable.xlsx`);
+      }
+    }</strong>…`);
         const response = await fetch(DATA_FILE_URL, { cache: "no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const arrayBuffer = await response.arrayBuffer();
@@ -702,6 +1049,15 @@
       state.dimension = e.target.value;
       state.sort = "label_asc";
       document.getElementById("sortSelect").value = "label_asc";
+      refreshView();
+    });
+    document.getElementById("ballotViewSelect").addEventListener("change", (e) => {
+      state.ballotView = e.target.value;
+      refreshView();
+    });
+
+    document.getElementById("partyFilterSelect").addEventListener("change", (e) => {
+      state.partyFilter = e.target.value;
       refreshView();
     });
 
@@ -754,6 +1110,32 @@
         console.error(error);
         setStatus(`Last refreshed: unavailable. Could not load local workbook. Error: ${error.message}`);
       }
+    });
+
+
+    function getVisibleTotals() {
+      return computeVisibleTotals();
+    }
+
+    function updatePrintContext() {
+      const meta = dimensionMeta[state.dimension];
+      const ballotText = state.ballotView === "returned" ? "Returned Ballots" : "Applied Ballots";
+      const partyText = state.partyFilter === "ALL" ? "All Parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
+      const sortLabel = document.getElementById("sortSelect").options[document.getElementById("sortSelect").selectedIndex].text;
+      const updatedText = document.getElementById("dataStatus").textContent.trim();
+
+      document.getElementById("printContextLine").textContent =
+        `${meta.label} | ${ballotText} | ${partyText} | ${sortLabel}`;
+      document.getElementById("printUpdatedLine").textContent = updatedText;
+    }
+
+    function printReport() {
+      updatePrintContext();
+      window.print();
+    }
+
+    document.getElementById("printReportBtn").addEventListener("click", () => {
+      printReport();
     });
 
     loadHostedWorkbook();

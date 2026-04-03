@@ -1012,13 +1012,43 @@
     }
 
     function getAgeBucket(value) {
-      const n = Number(value);
-      if (Number.isNaN(n)) return "Unknown";
-      if (n < 25) return "18–24";
-      if (n < 35) return "25–34";
-      if (n < 50) return "35–49";
-      if (n < 65) return "50–64";
-      return "65+";
+      const raw = String(value ?? "").trim();
+      if (!raw) return "Unknown";
+
+      // If the workbook already provides age groups, use them as-is.
+      const normalized = raw.replace(/\s+/g, " ");
+
+      const knownGroups = [
+        "18-24", "18–24",
+        "25-34", "25–34",
+        "35-49", "35–49",
+        "50-64", "50–64",
+        "65+", "65 and over", "65 & over", "65 or older",
+        "Unknown"
+      ];
+
+      const match = knownGroups.find(g => g.toLowerCase() === normalized.toLowerCase());
+      if (match) {
+        if (match.toLowerCase().startsWith("18")) return "18–24";
+        if (match.toLowerCase().startsWith("25")) return "25–34";
+        if (match.toLowerCase().startsWith("35")) return "35–49";
+        if (match.toLowerCase().startsWith("50")) return "50–64";
+        if (match.toLowerCase().startsWith("65")) return "65+";
+        return "Unknown";
+      }
+
+      // Fall back to numeric age handling if the column stores raw ages.
+      const n = Number(raw);
+      if (!Number.isNaN(n)) {
+        if (n < 25) return "18–24";
+        if (n < 35) return "25–34";
+        if (n < 50) return "35–49";
+        if (n < 65) return "50–64";
+        return "65+";
+      }
+
+      // If the file uses a different age-group label, preserve it rather than forcing Unknown.
+      return normalized;
     }
 
     function computeGenderTotals() {
@@ -1033,12 +1063,24 @@
 
     function computeAgeTotals() {
       const rows = getViewFilteredRows(state.rawRows);
-      const totals = { "18–24": 0, "25–34": 0, "35–49": 0, "50–64": 0, "65+": 0, "Unknown": 0 };
+      const totals = {};
       rows.forEach(r => {
         const key = getAgeBucket(r.Age);
+        if (!totals[key]) totals[key] = 0;
         totals[key] += Number(r.Voters || 0);
       });
-      return totals;
+
+      const preferredOrder = ["18–24", "25–34", "35–49", "50–64", "65+", "Unknown"];
+      const ordered = {};
+      preferredOrder.forEach(key => {
+        if (totals[key] !== undefined) ordered[key] = totals[key];
+      });
+
+      Object.keys(totals).forEach(key => {
+        if (ordered[key] === undefined) ordered[key] = totals[key];
+      });
+
+      return ordered;
     }
     function computeStatewideAppliedReturnedByParty() {
       const partyFilter = state.partyFilter;
@@ -1222,10 +1264,10 @@
     const ageChart = new Chart(ageCtx, {
       type: "doughnut",
       data: {
-        labels: ["18–24", "25–34", "35–49", "50–64", "65+", "Unknown"],
+        labels: [],
         datasets: [{
-          data: [0, 0, 0, 0, 0, 0],
-          backgroundColor: ["#59a14f", "#76b7b2", "#edc948", "#af7aa1", "#e15759", "#bab0ab"],
+          data: [],
+          backgroundColor: ["#59a14f", "#76b7b2", "#edc948", "#af7aa1", "#e15759", "#bab0ab", "#9c755f", "#ff9da7", "#4e79a7", "#b07aa1"],
           borderWidth: 0
         }]
       },
@@ -1447,8 +1489,8 @@
       genderChart.data.datasets[0].data = [genderTotals["Male"], genderTotals["Female"], genderTotals["Other/Unknown"]];
       genderChart.update();
 
-      ageChart.data.labels = ["18–24", "25–34", "35–49", "50–64", "65+", "Unknown"];
-      ageChart.data.datasets[0].data = [ageTotals["18–24"], ageTotals["25–34"], ageTotals["35–49"], ageTotals["50–64"], ageTotals["65+"], ageTotals["Unknown"]];
+      ageChart.data.labels = Object.keys(ageTotals);
+      ageChart.data.datasets[0].data = Object.values(ageTotals);
       ageChart.update();
 
       document.getElementById("partyBreakStatus").textContent = "Showing statewide party, gender, and age breakdowns. Hover over or tap a row to inspect party details for that geography.";

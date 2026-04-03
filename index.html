@@ -1031,10 +1031,12 @@
                 }
               }
             },
+            outline: geojson,
             scales: {
               projection: {
                 axis: "x",
-                projection: "albersUsa"
+                projection: "mercator",
+                padding: 12
               },
               color: {
                 axis: "x",
@@ -1053,7 +1055,7 @@
 
         const metricLabel = document.getElementById("heatMetricSelect").selectedOptions[0].text.replace("Heat Map Metric: ","");
         statusEl.textContent = maxValue > 0
-          ? `Showing Pennsylvania county heat map for ${metricLabel.toLowerCase()} using the current dashboard filters.`
+          ? `Showing zoomed Pennsylvania county heat map for ${metricLabel.toLowerCase()} using the current dashboard filters.`
           : `No county values were available for ${metricLabel.toLowerCase()} under the current filters.`;
       } catch (error) {
         destroyHeatMapChart();

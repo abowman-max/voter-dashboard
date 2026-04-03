@@ -612,6 +612,11 @@
     };
 
     const formatNum = (n) => Number(n || 0).toLocaleString();
+    const escapeAttr = (value) => String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
 
     function setStatus(message) {
       document.getElementById("dataStatus").innerHTML = message;
@@ -941,7 +946,7 @@
         const repPct = r.Total ? ((r.R / r.Total) * 100).toFixed(1) : "0.0";
         return `
         <tr class="detail-row"
-            data-label="${String(r.label).replace(/"/g, '&quot;')}"
+            data-label="${escapeAttr(r.label)}"
             data-d="${r.D}"
             data-o="${r.O}"
             data-r="${r.R}"
@@ -958,7 +963,7 @@
       `;
       }).join("");
 
-      attachTableHoverHandlers();
+      applyPinnedPartyBreakIfPossible();
     }
 
 
@@ -1016,46 +1021,53 @@
       );
     }
 
-    function attachTableHoverHandlers() {
-      document.querySelectorAll("#detailTable tbody tr.detail-row").forEach((row) => {
-        const getRowData = () => ({
-          label: row.getAttribute("data-label") || "",
-          d: Number(row.getAttribute("data-d") || 0),
-          o: Number(row.getAttribute("data-o") || 0),
-          r: Number(row.getAttribute("data-r") || 0),
-          total: Number(row.getAttribute("data-total") || 0)
-        });
-
-        row.addEventListener("mouseenter", () => {
-          if (state.pinnedPartyBreakRow) return;
-          const data = getRowData();
-          showRowPartyBreak(data.label, data.d, data.o, data.r, data.total, false);
-        });
-
-        row.addEventListener("mouseleave", () => {
-          if (state.pinnedPartyBreakRow) return;
-          showStatewidePartyBreak();
-        });
-
-        row.addEventListener("click", () => {
-          const data = getRowData();
-
-          if (state.pinnedPartyBreakRow && state.pinnedPartyBreakRow.label === data.label) {
-            state.pinnedPartyBreakRow = null;
-            clearActiveRows();
-            showStatewidePartyBreak();
-            return;
-          }
-
-          state.pinnedPartyBreakRow = data;
-          clearActiveRows();
-          row.classList.add("active-row");
-          showRowPartyBreak(data.label, data.d, data.o, data.r, data.total, true);
-        });
-      });
-
-      applyPinnedPartyBreakIfPossible();
+    function getRowDataFromElement(row) {
+      return {
+        label: row.getAttribute("data-label") || "",
+        d: Number(row.getAttribute("data-d") || 0),
+        o: Number(row.getAttribute("data-o") || 0),
+        r: Number(row.getAttribute("data-r") || 0),
+        total: Number(row.getAttribute("data-total") || 0)
+      };
     }
+
+    const detailTableBody = document.querySelector("#detailTable tbody");
+
+    detailTableBody.addEventListener("mouseover", (event) => {
+      const row = event.target.closest("tr.detail-row");
+      if (!row || state.pinnedPartyBreakRow) return;
+      const data = getRowDataFromElement(row);
+      showRowPartyBreak(data.label, data.d, data.o, data.r, data.total, false);
+    });
+
+    detailTableBody.addEventListener("mouseout", (event) => {
+      const row = event.target.closest("tr.detail-row");
+      if (!row || state.pinnedPartyBreakRow) return;
+
+      const related = event.relatedTarget;
+      if (related && row.contains(related)) return;
+
+      showStatewidePartyBreak();
+    });
+
+    detailTableBody.addEventListener("click", (event) => {
+      const row = event.target.closest("tr.detail-row");
+      if (!row) return;
+
+      const data = getRowDataFromElement(row);
+
+      if (state.pinnedPartyBreakRow && state.pinnedPartyBreakRow.label === data.label) {
+        state.pinnedPartyBreakRow = null;
+        clearActiveRows();
+        showStatewidePartyBreak();
+        return;
+      }
+
+      state.pinnedPartyBreakRow = data;
+      clearActiveRows();
+      row.classList.add("active-row");
+      showRowPartyBreak(data.label, data.d, data.o, data.r, data.total, true);
+    });
 
     function refreshView() {
       updateHeaderText();

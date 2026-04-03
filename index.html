@@ -368,14 +368,14 @@
       pointer-events: none;
       background: rgba(35,35,35,.94);
       color: #fff;
-      padding: 6px 8px;
-      border-radius: 8px;
+      padding: 5px 7px;
+      border-radius: 7px;
       font-size: 11px;
-      line-height: 1.3;
+      line-height: 1.25;
       display: none;
-      box-shadow: 0 8px 18px rgba(0,0,0,.16);
-      max-width: 200px;
-      transform: translate(8px, 8px);
+      box-shadow: 0 6px 14px rgba(0,0,0,.14);
+      max-width: 180px;
+      transform: translate(2px, 2px);
     }
     .heat-county {
       cursor: pointer;
@@ -607,9 +607,9 @@
       <p>County heat map based on your current dashboard filters. County is the only geography shown on the map for now; district views display a message until a district map is added.</p>
       <div class="heat-toolbar">
         <select id="heatMetricSelect">
-          <option value="applied_total">Heat Map Metric: Total Applied</option>
+          <option value="applied_total" selected>Heat Map Metric: Total Applied</option>
           <option value="returned_total">Heat Map Metric: Total Returned</option>
-          <option value="return_rate" selected>Heat Map Metric: Return Rate</option>
+          <option value="return_rate">Heat Map Metric: Return Rate</option>
           <option value="dem_applied">Heat Map Metric: Dem Applied</option>
           <option value="rep_applied">Heat Map Metric: Rep Applied</option>
           <option value="other_applied">Heat Map Metric: Other Applied</option>
@@ -1174,8 +1174,8 @@
               : `${districtPrefix(dimension)} ${label}`;
             const formatted = metric === "return_rate" ? value.toFixed(1) + "%" : formatNum(value);
             tooltip.style.display = "block";
-            tooltip.style.left = event.clientX + "px";
-            tooltip.style.top = event.clientY + "px";
+            tooltip.style.left = (event.clientX + 2) + "px";
+            tooltip.style.top = (event.clientY + 2) + "px";
             tooltip.innerHTML = `<strong>${displayName}</strong><br>${metricLabel}: ${formatted}`;
           })
           .on("mouseleave", function() {
@@ -1411,7 +1411,7 @@
     });
 
     function positionRowPiePopup(clientX, clientY) {
-      const popupWidth = 220, popupHeight = 195, margin = 10;
+      const popupWidth = 220, popupHeight = 195, margin = 4;
       let left = clientX + margin, top = clientY - 20;
       if (left + popupWidth > window.innerWidth - 8) left = clientX - popupWidth - margin;
       if (top + popupHeight > window.innerHeight - 8) top = window.innerHeight - popupHeight - 8;

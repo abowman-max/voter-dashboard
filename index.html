@@ -246,6 +246,7 @@
     }
     table {
       width:100%;
+      width:100%;
       min-width:680px;
       border-collapse:collapse;
       background:#fff;
@@ -415,6 +416,7 @@
         page-break-inside:avoid;
       }
       table {
+      width:100%;
         min-width:0 !important;
         font-size:11px !important;
       }
@@ -516,7 +518,7 @@
       </div>
     </section>
 
-    <section class="card section" style="margin-bottom:22px;">
+    <section class="card section" style="width:100%;">
       <h2>Daily Change</h2>
       <p>New ballot activity since the previous day’s file. This compares the current <strong>DataTable.xlsx</strong> against a hosted <strong>PreviousDataTable.xlsx</strong> and organizes it by party with applied, returned, and return-rate columns.</p>
       <div class="grid" style="grid-template-columns: 1.2fr .8fr; gap:18px;">
@@ -568,7 +570,7 @@
       </div>
       <div class="foot" id="dailyChangeStatus">Daily change comparison not loaded yet.</div>
     
-    <section class="card section" style="margin-bottom:22px;">
+    <section class="card section" style="width:100%;">
       <h2>Statewide Voters by Party</h2>
       <p>Statewide totals by party for the current filtered view, showing total applied, total returned, and return rate.</p>
       <div style="overflow:auto;">
@@ -640,10 +642,10 @@
       </section>
     </div>
 
-    <section class="card section" style="margin-top:22px;">
+    <section class="card section" style="width:100%;">
       <h2 id="tableTitle">County Detail Table</h2>
       <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
-      <div class="table-wrap">
+      <div class="table-wrap" style="width:100%;">
         <table id="detailTable">
           <thead>
             <tr>
@@ -677,7 +679,7 @@
   </div>
 
     <div class="grid">
-      <section class="card section">
+      <section class="card section" style="width:100%;">
         <h2>Comparison View</h2>
         <p>Use the dropdowns to switch geography, choose all voters or ballot activity views, and filter by party.</p>
 
@@ -733,7 +735,7 @@
         </div>
       </section>
 
-      <section class="card section">
+      <section class="card section" style="width:100%;">
         <h2><span style="font-size:18px; font-weight:700;">Statewide Breakdown by Party, Gender and Age</span></h2>
         <p>Compact statewide views for party, gender, and age. Hover over any row in the data table to see a quick party popup for that geography.</p>
         

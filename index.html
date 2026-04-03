@@ -246,6 +246,34 @@
       outline:2px solid #2f6fdf;
       outline-offset:-2px;
     }
+    .row-pie-popup {
+      position:fixed;
+      z-index:9999;
+      width:220px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      box-shadow:0 14px 34px rgba(0,0,0,.14);
+      padding:12px;
+      pointer-events:none;
+      display:none;
+    }
+    .row-pie-popup .popup-title {
+      font-size:13px;
+      font-weight:700;
+      color:#232323;
+      margin-bottom:6px;
+      line-height:1.25;
+    }
+    .row-pie-popup .popup-subtitle {
+      font-size:11px;
+      color:#666;
+      margin-bottom:8px;
+    }
+    .row-pie-popup .popup-chart-wrap {
+      height:120px;
+      position:relative;
+    }
     td.num, th.num {
       text-align:right;
       font-variant-numeric: tabular-nums;
@@ -562,6 +590,14 @@
         <input class="hidden-file-input" id="localFileInput" type="file" accept=".xlsx,.xls" />
       </div>
     </section>
+  </div>
+
+  <div id="rowPiePopup" class="row-pie-popup">
+    <div id="rowPiePopupTitle" class="popup-title">Party Breakdown</div>
+    <div id="rowPiePopupSubtitle" class="popup-subtitle"></div>
+    <div class="popup-chart-wrap">
+      <canvas id="rowPiePopupCanvas"></canvas>
+    </div>
   </div>
 
   <script>
@@ -937,6 +973,86 @@
         }
       }
     });
+    const rowPiePopup = document.getElementById("rowPiePopup");
+    const rowPiePopupTitle = document.getElementById("rowPiePopupTitle");
+    const rowPiePopupSubtitle = document.getElementById("rowPiePopupSubtitle");
+    const rowPiePopupCtx = document.getElementById("rowPiePopupCanvas").getContext("2d");
+
+    const rowPiePopupChart = new Chart(rowPiePopupCtx, {
+      type: "doughnut",
+      data: {
+        labels: ["Democrats", "Other", "Republicans"],
+        datasets: [{
+          data: [0, 0, 0],
+          backgroundColor: ["#2f6fdf", "#2fa84f", "#8d0d0d"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        cutout: "62%",
+        animation: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              usePointStyle: true,
+              boxWidth: 10,
+              color: "#4a4a4a",
+              padding: 10,
+              font: { size: 10 }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = context.dataset.data.reduce((a,b) => a + b, 0);
+                const pct = total ? ((context.raw / total) * 100).toFixed(1) : "0.0";
+                return `${context.label}: ${formatNum(context.raw)} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    function positionRowPiePopup(clientX, clientY) {
+      const popupWidth = 220;
+      const popupHeight = 195;
+      const margin = 18;
+      let left = clientX + margin;
+      let top = clientY - 20;
+
+      if (left + popupWidth > window.innerWidth - 8) {
+        left = clientX - popupWidth - margin;
+      }
+      if (top + popupHeight > window.innerHeight - 8) {
+        top = window.innerHeight - popupHeight - 8;
+      }
+      if (top < 8) top = 8;
+      if (left < 8) left = 8;
+
+      rowPiePopup.style.left = `${left}px`;
+      rowPiePopup.style.top = `${top}px`;
+    }
+
+    function showRowPiePopup(label, d, o, r, total, clientX, clientY) {
+      rowPiePopupTitle.textContent = label || "Party Breakdown";
+      const demPct = total ? ((d / total) * 100).toFixed(1) : "0.0";
+      const otherPct = total ? ((o / total) * 100).toFixed(1) : "0.0";
+      const repPct = total ? ((r / total) * 100).toFixed(1) : "0.0";
+      rowPiePopupSubtitle.textContent = `Dem ${demPct}% • Other ${otherPct}% • Rep ${repPct}%`;
+
+      rowPiePopupChart.data.datasets[0].data = [d, o, r];
+      rowPiePopupChart.update();
+
+      positionRowPiePopup(clientX, clientY);
+      rowPiePopup.style.display = "block";
+    }
+
+    function hideRowPiePopup() {
+      rowPiePopup.style.display = "none";
+    }
 
     function renderTable(rows) {
       const tbody = document.querySelector("#detailTable tbody");
@@ -1035,19 +1151,23 @@
 
     detailTableBody.addEventListener("mouseover", (event) => {
       const row = event.target.closest("tr.detail-row");
-      if (!row || state.pinnedPartyBreakRow) return;
+      if (!row) return;
       const data = getRowDataFromElement(row);
-      showRowPartyBreak(data.label, data.d, data.o, data.r, data.total, false);
+      showRowPiePopup(data.label, data.d, data.o, data.r, data.total, event.clientX, event.clientY);
+    });
+
+    detailTableBody.addEventListener("mousemove", (event) => {
+      const row = event.target.closest("tr.detail-row");
+      if (!row) return;
+      positionRowPiePopup(event.clientX, event.clientY);
     });
 
     detailTableBody.addEventListener("mouseout", (event) => {
       const row = event.target.closest("tr.detail-row");
-      if (!row || state.pinnedPartyBreakRow) return;
-
+      if (!row) return;
       const related = event.relatedTarget;
       if (related && row.contains(related)) return;
-
-      showStatewidePartyBreak();
+      hideRowPiePopup();
     });
 
     detailTableBody.addEventListener("click", (event) => {
@@ -1070,6 +1190,7 @@
     });
 
     function refreshView() {
+      hideRowPiePopup();
       updateHeaderText();
       updateCards();
 

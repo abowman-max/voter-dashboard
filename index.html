@@ -963,6 +963,9 @@
       document.getElementById("groupCountValue").textContent = formatNum(aggregateByDimension(state.rawRows, state.dimension).length);
 
       document.getElementById("detailColDem").textContent = state.detailTableMode === "returned" ? "Dem Returned" : "Dem Applied";
+      document.querySelectorAll("#detailTable thead th")[2].textContent = state.detailTableMode === "returned" ? "Dem Return Rate" : "Dem %";
+      document.querySelectorAll("#detailTable thead th")[4].textContent = state.detailTableMode === "returned" ? "Other Return Rate" : "Other %";
+      document.querySelectorAll("#detailTable thead th")[6].textContent = state.detailTableMode === "returned" ? "Rep Return Rate" : "Rep %";
       document.getElementById("detailColOther").textContent = state.detailTableMode === "returned" ? "Other Returned" : "Other Applied";
       document.getElementById("detailColRep").textContent = state.detailTableMode === "returned" ? "Rep Returned" : "Rep Applied";
       document.getElementById("detailColTotal").textContent = state.detailTableMode === "returned" ? "Total Returned" : "Total Applied";
@@ -1006,9 +1009,17 @@
         const rVal = state.detailTableMode === "returned" ? (r.returnedR || 0) : (r.appliedR || 0);
         const totalVal = state.detailTableMode === "returned" ? (r.returnedTotal || 0) : (r.appliedTotal || 0);
 
-        const demPct = totalVal ? ((dVal / totalVal) * 100).toFixed(1) : "0.0";
-        const otherPct = totalVal ? ((oVal / totalVal) * 100).toFixed(1) : "0.0";
-        const repPct = totalVal ? ((rVal / totalVal) * 100).toFixed(1) : "0.0";
+        let demPct, otherPct, repPct;
+
+        if (state.detailTableMode === "returned") {
+          demPct = r.appliedD ? ((r.returnedD / r.appliedD) * 100).toFixed(1) : "0.0";
+          otherPct = r.appliedO ? ((r.returnedO / r.appliedO) * 100).toFixed(1) : "0.0";
+          repPct = r.appliedR ? ((r.returnedR / r.appliedR) * 100).toFixed(1) : "0.0";
+        } else {
+          demPct = totalVal ? ((dVal / totalVal) * 100).toFixed(1) : "0.0";
+          otherPct = totalVal ? ((oVal / totalVal) * 100).toFixed(1) : "0.0";
+          repPct = totalVal ? ((rVal / totalVal) * 100).toFixed(1) : "0.0";
+        }
 
         return `
           <tr class="detail-row"

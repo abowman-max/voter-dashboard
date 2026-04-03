@@ -195,6 +195,28 @@
       height:320px;
       position:relative;
     }
+    .breakdown-grid {
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:10px;
+      align-items:start;
+    }
+    .breakdown-item {
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px;
+    }
+    .breakdown-label {
+      font-size:13px;
+      font-weight:700;
+      color:var(--brand);
+      margin-bottom:6px;
+      text-align:center;
+    }
+    .breakdown-mini {
+      height:190px;
+    }
     .legend-note {
       display:flex;
       gap:12px;
@@ -409,12 +431,15 @@
     @media (max-width:1080px) {
       .grid { grid-template-columns:1fr; }
       .stats { grid-template-columns:repeat(2, 1fr); }
+      .breakdown-grid { grid-template-columns:repeat(3, 1fr); }
     }
     @media (max-width:760px) {
       .hero { grid-template-columns:1fr; }
       .stats { grid-template-columns:1fr; }
       .brand-title { font-size:28px; }
       .hero h1 { font-size:34px; }
+      .breakdown-grid { grid-template-columns:1fr; }
+      .breakdown-mini { height:220px; }
     }
   </style>
 </head>
@@ -495,7 +520,7 @@
                 <th>Party</th>
                 <th class="num">Applied</th>
                 <th class="num">Returned</th>
-                <th class="num">Return Rate</th>
+
               </tr>
             </thead>
             <tbody>
@@ -503,19 +528,19 @@
                 <td>Democrats</td>
                 <td class="num" id="dailyAppliedDValue">—</td>
                 <td class="num" id="dailyReturnedDValue">—</td>
-                <td class="num" id="dailyRateDValue">—</td>
+                
               </tr>
               <tr>
                 <td>Republicans</td>
                 <td class="num" id="dailyAppliedRValue">—</td>
                 <td class="num" id="dailyReturnedRValue">—</td>
-                <td class="num" id="dailyRateRValue">—</td>
+                
               </tr>
               <tr>
                 <td>Other</td>
                 <td class="num" id="dailyAppliedOValue">—</td>
                 <td class="num" id="dailyReturnedOValue">—</td>
-                <td class="num" id="dailyRateOValue">—</td>
+                
               </tr>
             </tbody>
             <tfoot>
@@ -523,13 +548,57 @@
                 <th>Statewide Total</th>
                 <th class="num" id="dailyAppliedTotalValue">—</th>
                 <th class="num" id="dailyReturnedTotalValue">—</th>
-                <th class="num" id="dailyRateTotalValue">—</th>
+                
               </tr>
             </tfoot>
           </table>
         </div>
       </div>
       <div class="foot" id="dailyChangeStatus">Daily change comparison not loaded yet.</div>
+    
+    <section class="card section" style="margin-bottom:22px;">
+      <h2>Statewide Voters by Party</h2>
+      <p>Statewide totals by party for the current filtered view, showing total applied, total returned, and return rate.</p>
+      <div style="overflow:auto;">
+        <table id="statewidePartySummaryTable" style="min-width:420px;">
+          <thead>
+            <tr>
+              <th>Party</th>
+              <th class="num">Total Applied</th>
+              <th class="num">Total Returned</th>
+              
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Democrats</td>
+              <td class="num" id="summaryAppliedD">—</td>
+              <td class="num" id="summaryReturnedD">—</td>
+              <td class="num" id="summaryRateD">—</td>
+            </tr>
+            <tr>
+              <td>Republicans</td>
+              <td class="num" id="summaryAppliedR">—</td>
+              <td class="num" id="summaryReturnedR">—</td>
+              <td class="num" id="summaryRateR">—</td>
+            </tr>
+            <tr>
+              <td>Other</td>
+              <td class="num" id="summaryAppliedO">—</td>
+              <td class="num" id="summaryReturnedO">—</td>
+              <td class="num" id="summaryRateO">—</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th>Statewide Total</th>
+              <th class="num" id="summaryAppliedTotal">—</th>
+              <th class="num" id="summaryReturnedTotal">—</th>
+              <th class="num" id="summaryRateTotal">—</th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </section>
 
     <div class="grid">
@@ -590,12 +659,29 @@
       </section>
 
       <section class="card section">
-        <h2>Party Break</h2>
-        <p>Statewide breakout by party. Hover over any row in the data table to see that geography’s party mix.</p>
-        <div class="mini-chart">
-          <canvas id="donutChart"></canvas>
+        <h2>Statewide Breakdown by Party, Gender and Age</h2>
+        <p>Compact statewide views for party, gender, and age. Hover over any row in the data table to see a quick party popup for that geography.</p>
+        <div class="breakdown-grid">
+          <div class="breakdown-item">
+            <div class="breakdown-label">Party</div>
+            <div class="mini-chart breakdown-mini">
+              <canvas id="donutChart"></canvas>
+            </div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-label">Gender</div>
+            <div class="mini-chart breakdown-mini">
+              <canvas id="genderChart"></canvas>
+            </div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-label">Age</div>
+            <div class="mini-chart breakdown-mini">
+              <canvas id="ageChart"></canvas>
+            </div>
+          </div>
         </div>
-        <div class="foot" id="partyBreakStatus">Showing statewide party mix.</div>
+        <div class="foot" id="partyBreakStatus">Showing statewide party, gender, and age breakdowns.</div>
         <div class="foot">
           
         </div>
@@ -718,6 +804,8 @@
           STS: normalizeLabel(r["STS"]),
           STH: normalizeLabel(r["STH"]),
           Party: safeParty(r["Party"]),
+          Gender: String(r["Gender"] ?? r["Sex"] ?? "").trim(),
+          Age: r["Age"] ?? "",
           AppStatus: String(r["App Status"] ?? "").trim(),
           BallotStatus: String(r["Ballot Status"] ?? "").trim(),
           Voters: Number(r["Voters"] ?? 0) || 0
@@ -904,6 +992,90 @@
       const filteredRows = getViewFilteredRows(state.rawRows);
       return computeOverallTotals(filteredRows);
     }
+    function normalizeGender(value) {
+      const g = String(value ?? "").trim().toUpperCase();
+      if (g === "M" || g === "MALE") return "Male";
+      if (g === "F" || g === "FEMALE") return "Female";
+      return "Other/Unknown";
+    }
+
+    function getAgeBucket(value) {
+      const n = Number(value);
+      if (Number.isNaN(n)) return "Unknown";
+      if (n < 25) return "18–24";
+      if (n < 35) return "25–34";
+      if (n < 50) return "35–49";
+      if (n < 65) return "50–64";
+      return "65+";
+    }
+
+    function computeGenderTotals() {
+      const rows = getViewFilteredRows(state.rawRows);
+      const totals = { "Male": 0, "Female": 0, "Other/Unknown": 0 };
+      rows.forEach(r => {
+        const key = normalizeGender(r.Gender);
+        totals[key] += Number(r.Voters || 0);
+      });
+      return totals;
+    }
+
+    function computeAgeTotals() {
+      const rows = getViewFilteredRows(state.rawRows);
+      const totals = { "18–24": 0, "25–34": 0, "35–49": 0, "50–64": 0, "65+": 0, "Unknown": 0 };
+      rows.forEach(r => {
+        const key = getAgeBucket(r.Age);
+        totals[key] += Number(r.Voters || 0);
+      });
+      return totals;
+    }
+    function computeStatewideAppliedReturnedByParty() {
+      const partyFilter = state.partyFilter;
+      const rows = state.rawRows.filter(r => {
+        return partyFilter === "ALL" ? true : r.Party === partyFilter;
+      });
+
+      const result = {
+        D: { applied: 0, returned: 0 },
+        R: { applied: 0, returned: 0 },
+        O: { applied: 0, returned: 0 }
+      };
+
+      rows.forEach(r => {
+        const party = r.Party;
+        if (!result[party]) return;
+        const voters = Number(r.Voters || 0);
+
+        if (isAppliedRow(r)) result[party].applied += voters;
+        if (isReturnedRow(r)) result[party].returned += voters;
+      });
+
+      return result;
+    }
+
+    function updateStatewidePartySummaryTable() {
+      const data = computeStatewideAppliedReturnedByParty();
+      const fmt = (n) => formatNum(n);
+      const rate = (returned, applied) => applied ? ((returned / applied) * 100).toFixed(1) + "%" : "—";
+
+      document.getElementById("summaryAppliedD").textContent = fmt(data.D.applied);
+      document.getElementById("summaryReturnedD").textContent = fmt(data.D.returned);
+      document.getElementById("summaryRateD").textContent = rate(data.D.returned, data.D.applied);
+
+      document.getElementById("summaryAppliedR").textContent = fmt(data.R.applied);
+      document.getElementById("summaryReturnedR").textContent = fmt(data.R.returned);
+      document.getElementById("summaryRateR").textContent = rate(data.R.returned, data.R.applied);
+
+      document.getElementById("summaryAppliedO").textContent = fmt(data.O.applied);
+      document.getElementById("summaryReturnedO").textContent = fmt(data.O.returned);
+      document.getElementById("summaryRateO").textContent = rate(data.O.returned, data.O.applied);
+
+      const totalApplied = data.D.applied + data.R.applied + data.O.applied;
+      const totalReturned = data.D.returned + data.R.returned + data.O.returned;
+
+      document.getElementById("summaryAppliedTotal").textContent = fmt(totalApplied);
+      document.getElementById("summaryReturnedTotal").textContent = fmt(totalReturned);
+      document.getElementById("summaryRateTotal").textContent = rate(totalReturned, totalApplied);
+    }
 
     function updateCards() {
       const visibleTotals = computeVisibleTotals();
@@ -982,6 +1154,81 @@
               boxWidth: 10,
               color: "#4a4a4a",
               padding: 18
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = context.dataset.data.reduce((a,b) => a + b, 0);
+                const pct = total ? ((context.raw / total) * 100).toFixed(1) : "0.0";
+                return `${context.label}: ${formatNum(context.raw)} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+    const genderCtx = document.getElementById("genderChart").getContext("2d");
+    const genderChart = new Chart(genderCtx, {
+      type: "doughnut",
+      data: {
+        labels: ["Male", "Female", "Other/Unknown"],
+        datasets: [{
+          data: [0, 0, 0],
+          backgroundColor: ["#4e79a7", "#f28e2b", "#bab0ab"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        cutout: "68%",
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              usePointStyle: true,
+              boxWidth: 10,
+              color: "#4a4a4a",
+              padding: 10,
+              font: { size: 10 }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = context.dataset.data.reduce((a,b) => a + b, 0);
+                const pct = total ? ((context.raw / total) * 100).toFixed(1) : "0.0";
+                return `${context.label}: ${formatNum(context.raw)} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const ageCtx = document.getElementById("ageChart").getContext("2d");
+    const ageChart = new Chart(ageCtx, {
+      type: "doughnut",
+      data: {
+        labels: ["18–24", "25–34", "35–49", "50–64", "65+", "Unknown"],
+        datasets: [{
+          data: [0, 0, 0, 0, 0, 0],
+          backgroundColor: ["#59a14f", "#76b7b2", "#edc948", "#af7aa1", "#e15759", "#bab0ab"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        cutout: "68%",
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              usePointStyle: true,
+              boxWidth: 10,
+              color: "#4a4a4a",
+              padding: 8,
+              font: { size: 9 }
             }
           },
           tooltip: {
@@ -1177,10 +1424,22 @@
 
     function showStatewidePartyBreak() {
       const visibleTotals = computeVisibleTotals();
+      const genderTotals = computeGenderTotals();
+      const ageTotals = computeAgeTotals();
+
       donutChart.data.labels = ["Democrats", "Other", "Republicans"];
       donutChart.data.datasets[0].data = [visibleTotals.D, visibleTotals.O, visibleTotals.R];
       donutChart.update();
-      document.getElementById("partyBreakStatus").textContent = "Showing statewide party mix. Hover over or tap a row to inspect that geography.";
+
+      genderChart.data.labels = ["Male", "Female", "Other/Unknown"];
+      genderChart.data.datasets[0].data = [genderTotals["Male"], genderTotals["Female"], genderTotals["Other/Unknown"]];
+      genderChart.update();
+
+      ageChart.data.labels = ["18–24", "25–34", "35–49", "50–64", "65+", "Unknown"];
+      ageChart.data.datasets[0].data = [ageTotals["18–24"], ageTotals["25–34"], ageTotals["35–49"], ageTotals["50–64"], ageTotals["65+"], ageTotals["Unknown"]];
+      ageChart.update();
+
+      document.getElementById("partyBreakStatus").textContent = "Showing statewide party, gender, and age breakdowns. Hover over or tap a row to inspect party details for that geography.";
     }
 
     function showRowPartyBreak(label, d, o, r, total, pinned = false) {
@@ -1300,6 +1559,7 @@
       showStatewidePartyBreak();
 
       renderTable(allRows);
+      updateStatewidePartySummaryTable();
 
       state.dailyDelta = computeDailyDelta();
       dailyChangeChart.data.datasets[0].data = [state.dailyDelta.appliedByParty.D, state.dailyDelta.returnedByParty.D];
@@ -1327,14 +1587,10 @@
       document.getElementById("dailyReturnedRValue").textContent = fmtSigned(rr);
       document.getElementById("dailyReturnedOValue").textContent = fmtSigned(ro);
 
-      document.getElementById("dailyRateDValue").textContent = rate(rd, ad);
-      document.getElementById("dailyRateRValue").textContent = rate(rr, ar);
-      document.getElementById("dailyRateOValue").textContent = rate(ro, ao);
-
+                  
       document.getElementById("dailyAppliedTotalValue").textContent = fmtSigned(state.dailyDelta.applied);
       document.getElementById("dailyReturnedTotalValue").textContent = fmtSigned(state.dailyDelta.returned);
-      document.getElementById("dailyRateTotalValue").textContent = rate(state.dailyDelta.returned, state.dailyDelta.applied);
-
+      
       const partyText = state.partyFilter === "ALL" ? "all parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
       if (state.ballotView === "all") {
         document.getElementById("dailyChangeStatus").textContent = "Daily change compares current and previous files by party, with statewide totals and return rates.";

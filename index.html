@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TSS MIB Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-geo@4.3.6/build/index.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -337,6 +338,28 @@
   color:#1f4fa3;
 }
 
+
+    .heat-toolbar {
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+      margin-bottom:14px;
+    }
+    .heat-map-wrap {
+      width:100%;
+      height:520px;
+      position:relative;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:#fff;
+      overflow:hidden;
+    }
+    .heat-map-canvas {
+      width:100%;
+      height:100%;
+    }
+
 </style>
 
 
@@ -507,6 +530,28 @@
     </section>
 
     <section class="card section">
+      <h2>Geographic Heat Map</h2>
+      <p>County heat map based on your current dashboard filters. County is the only geography shown on the map for now; district views display a message until a district map is added.</p>
+      <div class="heat-toolbar">
+        <select id="heatMetricSelect">
+          <option value="applied_total">Heat Map Metric: Total Applied</option>
+          <option value="returned_total">Heat Map Metric: Total Returned</option>
+          <option value="return_rate" selected>Heat Map Metric: Return Rate</option>
+          <option value="dem_applied">Heat Map Metric: Dem Applied</option>
+          <option value="rep_applied">Heat Map Metric: Rep Applied</option>
+          <option value="other_applied">Heat Map Metric: Other Applied</option>
+          <option value="dem_returned">Heat Map Metric: Dem Returned</option>
+          <option value="rep_returned">Heat Map Metric: Rep Returned</option>
+          <option value="other_returned">Heat Map Metric: Other Returned</option>
+        </select>
+      </div>
+      <div class="heat-map-wrap">
+        <canvas id="heatMapCanvas" class="heat-map-canvas"></canvas>
+      </div>
+      <div class="foot" id="heatMapStatus">County heat map loading…</div>
+    </section>
+
+    <section class="card section">
       <h2>Comparison View</h2>
       <p>Use the dropdowns to switch geography, choose all voters or ballot activity views, and filter by party.</p>
       <div class="toolbar">
@@ -595,6 +640,7 @@
   <script>
     const DATA_FILE_URL = "./DataTable.xlsx";
     const PREVIOUS_DATA_FILE_URL = "./PreviousDataTable.xlsx";
+    const PA_COUNTY_GEOJSON_URL = "https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json";
 
     const dimensionMeta = {
       County: { label:"County", title:"County Detail Table", searchPlaceholder:"Search counties...", groupLabel:"Counties" },
@@ -623,6 +669,9 @@
         returnedByParty: { D:0, R:0, O:0 }
       }
     };
+
+    let heatMapChart = null;
+    let paCountyGeojson = null;
 
     const formatNum = (n) => Number(n || 0).toLocaleString();
     const escapeAttr = (value) => String(value ?? "")
@@ -871,6 +920,146 @@
         if (isReturnedRow(r)) result[r.Party].returned += voters;
       });
       return result;
+    }
+    function normalizeCountyMapLabel(name) {
+      return String(name || "")
+        .toUpperCase()
+        .replace(/\s+COUNTY$/i, "")
+        .replace(/\./g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function getHeatMetricValue(row, metric) {
+      if (metric === "applied_total") return Number(row.appliedTotal || 0);
+      if (metric === "returned_total") return Number(row.returnedTotal || 0);
+      if (metric === "return_rate") return row.appliedTotal ? ((Number(row.returnedTotal || 0) / Number(row.appliedTotal || 0)) * 100) : 0;
+      if (metric === "dem_applied") return Number(row.appliedD || 0);
+      if (metric === "rep_applied") return Number(row.appliedR || 0);
+      if (metric === "other_applied") return Number(row.appliedO || 0);
+      if (metric === "dem_returned") return Number(row.returnedD || 0);
+      if (metric === "rep_returned") return Number(row.returnedR || 0);
+      if (metric === "other_returned") return Number(row.returnedO || 0);
+      return 0;
+    }
+
+    async function ensureCountyGeojsonLoaded() {
+      if (paCountyGeojson) return paCountyGeojson;
+      const response = await fetch(PA_COUNTY_GEOJSON_URL, { cache: "force-cache" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const geojson = await response.json();
+
+      geojson.features = (geojson.features || []).filter(f => String(f.id || "").startsWith("42"));
+
+      const countyNamesByFips = {
+        "42001":"ADAMS","42003":"ALLEGHENY","42005":"ARMSTRONG","42007":"BEAVER","42009":"BEDFORD","42011":"BERKS","42013":"BLAIR","42015":"BRADFORD","42017":"BUCKS","42019":"BUTLER","42021":"CAMBRIA","42023":"CAMERON","42025":"CARBON","42027":"CENTRE","42029":"CHESTER","42031":"CLARION","42033":"CLEARFIELD","42035":"CLINTON","42037":"COLUMBIA","42039":"CRAWFORD","42041":"CUMBERLAND","42043":"DAUPHIN","42045":"DELAWARE","42047":"ELK","42049":"ERIE","42051":"FAYETTE","42053":"FOREST","42055":"FRANKLIN","42057":"FULTON","42059":"GREENE","42061":"HUNTINGDON","42063":"INDIANA","42065":"JEFFERSON","42067":"JUNIATA","42069":"LACKAWANNA","42071":"LANCASTER","42073":"LAWRENCE","42075":"LEBANON","42077":"LEHIGH","42079":"LUZERNE","42081":"LYCOMING","42083":"MCKEAN","42085":"MERCER","42087":"MIFFLIN","42089":"MONROE","42091":"MONTGOMERY","42093":"MONTOUR","42095":"NORTHAMPTON","42097":"NORTHUMBERLAND","42099":"PERRY","42101":"PHILADELPHIA","42103":"PIKE","42105":"POTTER","42107":"SCHUYLKILL","42109":"SNYDER","42111":"SOMERSET","42113":"SULLIVAN","42115":"SUSQUEHANNA","42117":"TIOGA","42119":"UNION","42121":"VENANGO","42123":"WARREN","42125":"WASHINGTON","42127":"WAYNE","42129":"WESTMORELAND","42131":"WYOMING","42133":"YORK"
+      };
+
+      geojson.features.forEach(f => {
+        f.properties = f.properties || {};
+        f.properties.name = countyNamesByFips[String(f.id || "")] || f.properties.name || String(f.id || "");
+      });
+
+      paCountyGeojson = geojson;
+      return geojson;
+    }
+
+    function destroyHeatMapChart() {
+      if (heatMapChart) {
+        heatMapChart.destroy();
+        heatMapChart = null;
+      }
+    }
+
+    async function renderHeatMap() {
+      const statusEl = document.getElementById("heatMapStatus");
+      const canvas = document.getElementById("heatMapCanvas");
+      if (!statusEl || !canvas) return;
+
+      if (state.dimension !== "County") {
+        destroyHeatMapChart();
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        statusEl.textContent = "Heat map is available for County view only right now. Switch the geography filter to County to see the Pennsylvania map.";
+        return;
+      }
+
+      try {
+        statusEl.textContent = "County heat map loading…";
+        const metric = document.getElementById("heatMetricSelect").value;
+        const geojson = await ensureCountyGeojsonLoaded();
+        const aggregated = aggregateByDimension(state.rawRows, "County");
+        const valueMap = new Map();
+
+        aggregated.forEach(row => {
+          valueMap.set(normalizeCountyMapLabel(row.label), getHeatMetricValue(row, metric));
+        });
+
+        const data = geojson.features.map(feature => ({
+          feature,
+          value: valueMap.get(normalizeCountyMapLabel(feature.properties?.name || "")) || 0
+        }));
+
+        const maxValue = Math.max(...data.map(d => Number(d.value || 0)), 0);
+        destroyHeatMapChart();
+
+        const ctx = canvas.getContext("2d");
+        heatMapChart = new Chart(ctx, {
+          type: "choropleth",
+          data: {
+            labels: data.map(d => d.feature.properties.name),
+            datasets: [{
+              label: "County Heat Map",
+              data
+            }]
+          },
+          options: {
+            maintainAspectRatio: false,
+            showOutline: true,
+            showGraticule: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  title: (items) => items[0]?.raw?.feature?.properties?.name || "",
+                  label: (context) => {
+                    const value = Number(context.raw?.value || 0);
+                    const isRate = metric === "return_rate";
+                    const label = document.getElementById("heatMetricSelect").selectedOptions[0].text.replace("Heat Map Metric: ","");
+                    return `${label}: ${isRate ? value.toFixed(1) + "%" : formatNum(value)}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              projection: {
+                axis: "x",
+                projection: "albersUsa"
+              },
+              color: {
+                axis: "x",
+                quantize: 5,
+                interpolate: (v) => {
+                  if (metric === "return_rate") {
+                    if (v < 0.5) return `rgba(${245}, ${182 + Math.round(v*80)}, ${173 - Math.round(v*40)}, 0.95)`;
+                    return `rgba(${230 - Math.round((v-0.5)*140)}, ${220}, ${160 - Math.round((v-0.5)*60)}, 0.95)`;
+                  }
+                  return `rgba(${245 - Math.round(v*90)}, ${232 - Math.round(v*160)}, ${229 - Math.round(v*170)}, 0.95)`;
+                }
+              }
+            }
+          }
+        });
+
+        const metricLabel = document.getElementById("heatMetricSelect").selectedOptions[0].text.replace("Heat Map Metric: ","");
+        statusEl.textContent = maxValue > 0
+          ? `Showing Pennsylvania county heat map for ${metricLabel.toLowerCase()} using the current dashboard filters.`
+          : `No county values were available for ${metricLabel.toLowerCase()} under the current filters.`;
+      } catch (error) {
+        destroyHeatMapChart();
+        statusEl.textContent = "The county heat map could not be loaded right now.";
+        console.error(error);
+      }
     }
 
     function buildRowKey(row) {
@@ -1267,6 +1456,8 @@
           ? `Daily change shown versus PreviousDataTable.xlsx for ${partyText}.`
           : `To show daily change, upload a previous-day file named PreviousDataTable.xlsx in the same GitHub folder.`;
       }
+
+      renderHeatMap();
     }
 
     const detailTableBody = document.querySelector("#detailTable tbody");
@@ -1340,6 +1531,7 @@
       refreshView();
     });
     document.getElementById("printReportBtn").addEventListener("click", () => window.print());
+    document.getElementById("heatMetricSelect").addEventListener("change", () => renderHeatMap());
 
     async function loadPreviousWorkbook() {
       try {

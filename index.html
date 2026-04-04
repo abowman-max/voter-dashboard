@@ -67,7 +67,7 @@
       font-size:28px;
       line-height:1.08;
     }
-    .status-line { display:none !important; margin-top:6px; font-size:13px; color:var(--muted); }
+    .status-line { margin-top:6px; font-size:13px; color:var(--muted); }
     .promo {
       margin:16px 0;
       padding:16px 20px;
@@ -441,272 +441,111 @@
     }
 
 
-    .print-only { display:none; }
-
-    @media print {
-      @page {
-        size: letter portrait;
-        margin: 0.45in;
-      }
-
-      html, body {
-        background:#fff !important;
-        color:#000 !important;
-      }
-
-      body {
-        zoom: 1 !important;
-        font-size: 11px !important;
-      }
-
-      .page {
-        max-width:none !important;
-        padding:0 !important;
-      }
-
-      .hero, .promo, .heat-map-wrap, #heatGridWrap, .toolbar, #loadingOverlay, .row-pie-popup,
-      #heatTooltip, .toggle-group, #printReportBtn, .hero-logo, #heatMapCanvas, #mainChartInner {
-        box-shadow:none !important;
-      }
-
-      /* Hide interactive / non-report UI */
-      .promo,
-      .heat-map-wrap,
-      #heatGridWrap,
-      .heat-toolbar,
-      .toolbar,
-      #loadingOverlay,
-      #heatTooltip,
-      .row-pie-popup,
-      .toggle-group,
-      #detailAppliedBtn,
-      #detailReturnedBtn,
-      #heatMapStatus,
-      #comparisonFoot {
-        display:none !important;
-      }
-
-      .hero {
-        display:none !important;
-        padding:0 0 10px 0 !important;
-        margin:0 0 10px 0 !important;
-        border:0 !important;
-        box-shadow:none !important;
-      }
-
-      .hero h1 {
-        font-size:24px !important;
-        margin:0 0 4px 0 !important;
-      }
-
-      .status-line { display:none !important;
-        margin-top:0 !important;
-        font-size:11px !important;
-        color:#444 !important;
-      }
-
-      .card, .section, .stat {
-        border:0 !important;
-        box-shadow:none !important;
-        background:#fff !important;
-      }
-
-      .section {
-        padding:0 !important;
-        margin:0 0 14px 0 !important;
-      }
-
-      .section h2 {
-        font-size:16px !important;
-        margin:0 0 4px 0 !important;
-      }
-
-      .section p {
-        font-size:11px !important;
-        color:#444 !important;
-        margin:0 0 8px 0 !important;
-      }
-
-      .stats {
-        display:grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap:10px !important;
-        margin:0 0 14px 0 !important;
-      }
-
-      .stat {
-        border:1px solid #d9d1cb !important;
-        border-radius:10px !important;
-        padding:10px 12px !important;
-      }
-
-      .stat .label {
-        font-size:10px !important;
-        color:#666 !important;
-        margin-bottom:6px !important;
-      }
-
-      .stat .value {
-        font-size:18px !important;
-        color:#000 !important;
-      }
-
-      #insightStrip {
-        margin:0 0 14px 0 !important;
-      }
-
-      #insightStrip .value {
-        font-size:16px !important;
-      }
-
-      /* Print-only header and summary */
-      .print-only {
-        display:block !important;
-      }
-
-      #printReportHeader {
-        margin-bottom:10px !important;
-        border-bottom:2px solid #8d0d0d !important;
-        padding-bottom:8px !important;
-      }
-
-      .print-header-row {
-        display:flex !important;
-        align-items:center !important;
-        gap:10px !important;
-      }
-
-      .print-logo {
-        height:28px !important;
-        width:auto !important;
-        display:block !important;
-      }
-
-      .print-header-text {
-        display:flex !important;
-        flex-direction:column !important;
-        justify-content:center !important;
-      }
-
-      .print-title {
-        font-size:18px !important;
-        font-weight:700 !important;
-        color:#8d0d0d !important;
-        line-height:1.1 !important;
-        margin:0 0 2px 0 !important;
-      }
-
-      .print-date {
-        font-size:11px !important;
-        color:#444 !important;
-        line-height:1.2 !important;
-      }
-
-      #printReportHeader .subline {
-        font-size:11px !important;
-        color:#444 !important;
-        margin-top:6px !important;
-        margin-bottom:0 !important;
-      }
-
-      #printExecutiveSummary {
-        border:1px solid #d9d1cb !important;
-        border-radius:12px !important;
-        padding:10px 12px !important;
-        margin-bottom:14px !important;
-        page-break-inside:avoid !important;
-      }
-
-      #printExecutiveSummary .summary-title {
-        font-size:13px !important;
-        font-weight:700 !important;
-        color:#8d0d0d !important;
-        margin-bottom:6px !important;
-      }
-
-      #printExecutiveSummary .summary-text {
-        font-size:11px !important;
-        color:#222 !important;
-        line-height:1.4 !important;
-      }
-
-      /* Show only comparison chart in print */
-      #mainChartInner {
-        display:block !important;
-        width:100% !important;
-        min-width:0 !important;
-        height:280px !important;
-      }
-
-      .chart-wrap {
-        height:280px !important;
-        overflow:visible !important;
-        page-break-inside:avoid !important;
-      }
-
-      canvas#mainChart {
-        width:100% !important;
-        height:280px !important;
-      }
-
-      /* Tables */
-      .table-wrap {
-        overflow:visible !important;
-        border:0 !important;
-        border-radius:0 !important;
-      }
-
-      table {
-        width:100% !important;
-        min-width:0 !important;
-        table-layout:fixed !important;
-        border-collapse:collapse !important;
-        font-size:10px !important;
-      }
-
-      thead {
-        display:table-header-group !important;
-      }
-
-      thead th {
-        position:static !important;
-        background:#f3efec !important;
-        color:#000 !important;
-        border:1px solid #d9d1cb !important;
-        padding:6px 6px !important;
-        font-size:10px !important;
-        white-space:normal !important;
-      }
-
-      tbody td, tfoot th, tfoot td {
-        border:1px solid #e2dbd6 !important;
-        padding:5px 6px !important;
-        font-size:10px !important;
-        color:#000 !important;
-        white-space:normal !important;
-        word-break:break-word !important;
-      }
-
-      #detailTable th:first-child,
-      #detailTable td:first-child {
-        position:static !important;
-        left:auto !important;
-        background:#fff !important;
-        z-index:auto !important;
-        border-right:1px solid #e2dbd6 !important;
-      }
-
-      tfoot th, tfoot td {
-        background:#f7f3f1 !important;
-        font-weight:700 !important;
-      }
-
-      .performer-badge, .growth-badge {
-        display:inline-block !important;
-        margin-left:4px !important;
-        font-size:9px !important;
-        padding:2px 5px !important;
-      }
+    .story-toggle-row {
+      display:flex;
+      justify-content:flex-end;
+      margin:10px 0 2px;
+    }
+    .mode-pill {
+      display:inline-flex;
+      border:1px solid var(--line);
+      border-radius:999px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .mode-pill button {
+      border:0;
+      background:transparent;
+      padding:10px 14px;
+      cursor:pointer;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .mode-pill button.active {
+      background:var(--brand);
+      color:#fff;
+      font-weight:700;
+    }
+    .story-mode .analyst-only { display:none !important; }
+    .story-mode .page { max-width:1200px; }
+    .micro-card-grid {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:18px;
+      margin:0 0 18px 0;
+    }
+    .mini-panel {
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      padding:16px 18px;
+    }
+    .mini-panel h3 {
+      margin:0 0 8px 0;
+      color:var(--brand);
+      font-size:16px;
+    }
+    .mini-panel p, .mini-panel li {
+      font-size:14px;
+      line-height:1.45;
+      color:#333;
+    }
+    .mini-panel ul {
+      margin:8px 0 0 18px;
+      padding:0;
+    }
+    .legend-row {
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:10px;
+      font-size:12px;
+      color:#555;
+    }
+    .legend-chip {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .legend-swatch {
+      width:16px;
+      height:10px;
+      border-radius:999px;
+      display:inline-block;
+      border:1px solid rgba(0,0,0,.08);
+    }
+    .soft-table {
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+    }
+    .soft-table td {
+      padding:8px 0;
+      border-bottom:1px solid #eee6e1;
+      font-size:14px;
+    }
+    .soft-table tr:last-child td { border-bottom:0; }
+    .priority-flag {
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      background:#fff4d6;
+      color:#8c6400;
+      margin-left:6px;
+    }
+    .download-btn {
+      border:1px solid var(--brand);
+      background:#fff;
+      color:var(--brand);
+      font-weight:700;
+      cursor:pointer;
+    }
+    @media (max-width:1080px) {
+      .micro-card-grid { grid-template-columns:1fr; }
     }
 
 </style>
@@ -724,21 +563,6 @@
 </head>
 <body>
   <div class="page">
-  <section id="printReportHeader" class="print-only">
-    <div class="print-header-row">
-      <img src="https://static.wixstatic.com/media/b45117_afe41d8982634f35a4af7e1de54101cf~mv2.jpeg/v1/crop/x_0%2Cy_27%2Cw_828%2Ch_332/fill/w_828%2Ch_332%2Cal_c%2Cq_80%2Cenc_avif%2Cquality_auto/TSS%20Logo%20copy.jpeg" alt="TSS Logo" class="print-logo">
-      <div class="print-header-text">
-        <div class="print-title">TSS MIB Dashboard</div>
-        <div class="print-date" id="printReportDates">Loading…</div>
-      </div>
-    </div>
-    <div class="subline" id="printReportFilters">Filters</div>
-  </section>
-  <section id="printExecutiveSummary" class="print-only">
-    <div class="summary-title">Executive Summary</div>
-    <div class="summary-text" id="printExecutiveSummaryText">Summary</div>
-  </section>
-
     <section class="card hero">
       <div class="hero-logo">
         <img src="https://static.wixstatic.com/media/b45117_afe41d8982634f35a4af7e1de54101cf~mv2.jpeg/v1/crop/x_0%2Cy_27%2Cw_828%2Ch_332/fill/w_828%2Ch_332%2Cal_c%2Cq_80%2Cenc_avif%2Cquality_auto/TSS%20Logo%20copy.jpeg" alt="Targeted Strategic Solutions logo" />
@@ -756,6 +580,12 @@
         Call us at <strong>(484) 571-7131</strong>.
       </div>
     </section>
+    <div class="story-toggle-row analyst-only">
+      <div class="mode-pill">
+        <button id="clientViewBtn" type="button">Client View</button>
+        <button id="analystViewBtn" class="active" type="button">Analyst View</button>
+      </div>
+    </div>
     <section class="card" style="padding:14px 18px; margin:16px 0;">
       <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:flex-start;">
         <div>
@@ -787,6 +617,26 @@
       <div class="card stat">
         <div class="label">Top Daily Growth</div>
         <div class="value" id="insightTopGrowth" style="font-size:22px;">—</div>
+      </div>
+    </section>
+
+    <section class="micro-card-grid">
+      <div class="mini-panel">
+        <h3>Insight Summary</h3>
+        <p id="insightNarrative">Loading insights…</p>
+      </div>
+      <div class="mini-panel">
+        <h3>Top / Bottom Movers</h3>
+        <table class="soft-table">
+          <tbody>
+            <tr><td><strong>Top Mover</strong></td><td id="topMoverValue" style="text-align:right;">—</td></tr>
+            <tr><td><strong>Bottom Mover</strong></td><td id="bottomMoverValue" style="text-align:right;">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mini-panel">
+        <h3>Priority Areas</h3>
+        <div id="priorityAreaSummary">Loading priority areas…</div>
       </div>
     </section>
 
@@ -954,9 +804,14 @@
       </div>
       <div id="heatGridWrap" class="heat-grid-wrap" style="display:none;"></div>
       <div class="foot" id="heatMapStatus">County heat map loading… Click a county to filter the dashboard to that county. Click it again to clear.</div>
+      <div class="legend-row" id="heatLegendRow">
+        <span class="legend-chip"><span class="legend-swatch" style="background:#f5e8e5;"></span>Low</span>
+        <span class="legend-chip"><span class="legend-swatch" style="background:#cf8f7f;"></span>Medium</span>
+        <span class="legend-chip"><span class="legend-swatch" style="background:#8d0d0d;"></span>High</span>
+      </div>
     </section>
 
-    <section class="card section">
+    <section class="card section page-break-before avoid-break">
       <h2>Comparison View</h2>
       <p>Use the dropdowns to switch geography, choose all voters or ballot activity views, and filter by party.</p>
       <div class="toolbar">
@@ -999,7 +854,7 @@
           <button id="stackedBtn" class="active" type="button">Stacked</button>
           <button id="groupedBtn" type="button">Grouped</button>
         </div>
-        <button id="printReportBtn" type="button">Generate Client Report PDF</button>
+        <button id="printReportBtn" type="button">Export Client PDF</button>
       </div>
       <div class="chart-wrap" style="overflow-x:auto; overflow-y:hidden;">
         <div id="mainChartInner" style="min-width:1200px; height:100%;">
@@ -1009,7 +864,7 @@
       <div class="foot" id="comparisonFoot">Chart respects the Top 10 / 25 / 50 / All setting. The detail table below always shows all matching rows.</div>
     </section>
 
-    <section class="card section">
+    <section class="card section page-break-before">
       <h2 id="tableTitle">County Detail Table</h2>
       <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
       <div id="detailBenchmarkNote" class="benchmark-note" style="margin-bottom:10px;"></div>
@@ -1083,7 +938,9 @@
         returnedByParty: { D:0, R:0, O:0 }
       },
       currentLastModified: "",
-      previousLastModified: ""
+      previousLastModified: "",
+      viewMode: "analyst",
+      targetingMode: false
     };
 
     let heatMapChart = null;
@@ -1108,6 +965,63 @@
       if (!value) return "Unavailable";
       const d = new Date(value);
       return Number.isNaN(d.getTime()) ? "Unavailable" : d.toLocaleString();
+    }
+
+
+    function cacheKey(url) {
+      return `tss_cache::${url}`;
+    }
+
+    async function fetchWithCache(url) {
+      const response = await fetch(url, { method:"GET", cache:"no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const text = await response.text();
+      try {
+        localStorage.setItem(cacheKey(url), text);
+      } catch (e) {}
+      return {
+        text,
+        lastModified: response.headers.get("Last-Modified") || ""
+      };
+    }
+
+    function readCache(url) {
+      try {
+        return localStorage.getItem(cacheKey(url)) || "";
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function setViewMode(mode) {
+      state.viewMode = mode;
+      document.body.classList.toggle("story-mode", mode === "client");
+      document.getElementById("clientViewBtn")?.classList.toggle("active", mode === "client");
+      document.getElementById("analystViewBtn")?.classList.toggle("active", mode === "analyst");
+    }
+
+    function exportFilteredCsv() {
+      const rows = getFilteredRows();
+      const lines = [["Label","Dem","Other","Rep","Total","AppliedTotal","ReturnedTotal","TotalReturnRate"]];
+      rows.forEach(r => {
+        lines.push([
+          r.label,
+          Number(r.D || 0),
+          Number(r.O || 0),
+          Number(r.R || 0),
+          Number(r.Total || 0),
+          Number(r.appliedTotal || 0),
+          Number(r.returnedTotal || 0),
+          Number(getTotalReturnRate(r).toFixed(1))
+        ]);
+      });
+      const csv = lines.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `tss_filtered_view_${state.dimension.toLowerCase()}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     }
 
     function setStatus(message) {
@@ -1807,38 +1721,116 @@
     }
 
 
+
+    function updateHeatLegend() {
+      const row = document.getElementById("heatLegendRow");
+      const metric = document.getElementById("heatMetricSelect")?.value || "applied_total";
+      if (!row) return;
+      if (metric === "return_rate") {
+        row.innerHTML = `
+          <span class="legend-chip"><span class="legend-swatch" style="background:#f5b6ad;"></span>Low rate</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#f3e7a6;"></span>Mid rate</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#bfe3bf;"></span>High rate</span>`;
+      } else {
+        row.innerHTML = `
+          <span class="legend-chip"><span class="legend-swatch" style="background:#f5e8e5;"></span>Low</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#cf8f7f;"></span>Medium</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#8d0d0d;"></span>High</span>`;
+      }
+    }
+
+    function updateMoverPanels(rows) {
+      const visibleRows = rows && rows.length ? rows : getFilteredRows();
+      const topEl = document.getElementById("topMoverValue");
+      const bottomEl = document.getElementById("bottomMoverValue");
+      const priorityEl = document.getElementById("priorityAreaSummary");
+      const narrativeEl = document.getElementById("insightNarrative");
+      if (!topEl || !bottomEl || !priorityEl || !narrativeEl) return;
+
+      if (!visibleRows.length) {
+        topEl.textContent = "No results";
+        bottomEl.textContent = "No results";
+        priorityEl.textContent = "No results";
+        narrativeEl.textContent = "No results for the current filters.";
+        return;
+      }
+
+      let rankedGrowth = [];
+      if (state.previousRows && state.previousRows.length) {
+        const growthMap = computeGeographyGrowthMap(state.dimension);
+        rankedGrowth = visibleRows.map(r => ({
+          label: r.label,
+          delta: state.detailTableMode === "returned"
+            ? Number(growthMap.get(r.label)?.returnedDelta || 0)
+            : Number(growthMap.get(r.label)?.appliedDelta || 0)
+        })).sort((a,b) => b.delta - a.delta);
+      }
+
+      const topMover = rankedGrowth.length ? rankedGrowth[0] : null;
+      const bottomMover = rankedGrowth.length ? [...rankedGrowth].sort((a,b) => a.delta - b.delta)[0] : null;
+
+      topEl.textContent = topMover ? `${topMover.label} (${topMover.delta > 0 ? "+" : ""}${formatNum(topMover.delta)})` : "Upload previous CSV";
+      bottomEl.textContent = bottomMover ? `${bottomMover.label} (${bottomMover.delta > 0 ? "+" : ""}${formatNum(bottomMover.delta)})` : "Upload previous CSV";
+
+      const priorityRows = visibleRows
+        .filter(r => Number(r.appliedTotal || 0) > 0)
+        .map(r => ({
+          label: r.label,
+          applied: Number(r.appliedTotal || 0),
+          rate: getTotalReturnRate(r)
+        }))
+        .filter(r => r.applied > 0)
+        .sort((a,b) => (b.applied * (100 - b.rate)) - (a.applied * (100 - a.rate)))
+        .slice(0,3);
+
+      priorityEl.innerHTML = priorityRows.length
+        ? `<ul>${priorityRows.map(r => `<li><strong>${r.label}</strong> — ${formatNum(r.applied)} applied, ${r.rate.toFixed(1)}% return rate <span class="priority-flag">Priority</span></li>`).join("")}</ul>`
+        : "No priority areas found.";
+
+      const highestVolume = [...visibleRows].sort((a,b) => Number(b.appliedTotal ?? b.Total ?? 0) - Number(a.appliedTotal ?? a.Total ?? 0))[0];
+      const bestRateRows = visibleRows.filter(r => Number(r.appliedTotal ?? 0) > 0);
+      const bestRate = bestRateRows.length ? [...bestRateRows].sort((a,b) => getTotalReturnRate(b) - getTotalReturnRate(a))[0] : null;
+      const growthSentence = topMover ? `${topMover.label} shows the fastest daily movement at ${topMover.delta > 0 ? "+" : ""}${formatNum(topMover.delta)}.` : `Daily growth will appear after a previous-day CSV is uploaded.`;
+      narrativeEl.textContent = `${highestVolume.label} leads the current view with ${formatNum(Number(highestVolume.appliedTotal ?? highestVolume.Total ?? 0))} applied voters. ${bestRate ? `${bestRate.label} has the strongest return rate at ${getTotalReturnRate(bestRate).toFixed(1)}%.` : `A return-rate leader is not available for the current filters.`} ${growthSentence}`;
+    }
+
     function updateCurrentFilterSummary() {
       const geo = dimensionMeta[state.dimension]?.label || state.dimension;
       const ballot = state.ballotView === "all" ? "All voters" : (state.ballotView === "applied" ? "Applied ballots" : "Returned ballots");
       const party = state.partyFilter === "ALL" ? "All parties" : (state.partyFilter === "D" ? "Democrats" : (state.partyFilter === "R" ? "Republicans" : "Other"));
       const heatMetric = document.getElementById("heatMetricSelect")?.selectedOptions?.[0]?.text?.replace("Heat Map Metric: ", "") || "Total Applied";
       const search = state.search ? ` | Selection: ${state.search}` : "";
-      document.getElementById("currentFilterSummary").textContent = `${geo} | ${ballot} | ${party} | Map: ${heatMetric}${search}`;
+      document.getElementById("currentFilterSummary").textContent = `${geo} | ${ballot} | ${party} | Map: ${heatMetric}${state.targetingMode ? " | Targeting mode" : ""}${search}`;
     }
 
     function updateFileStatus() {
       document.getElementById("currentDataFileStatus").textContent = state.currentLastModified ? safeDateText(state.currentLastModified) : "Loaded";
-      document.getElementById("previousDataFileStatus").textContent = state.previousLastModified ? safeDateText(state.previousLastModified) : "Not loaded";
+      document.getElementById("previousDataFileStatus").textContent = state.previousLastModified ? safeDateText(state.previousLastModified) : (state.previousRows && state.previousRows.length ? "Loaded" : "Not loaded");
     }
 
     function updateInsights(rows) {
       const visibleRows = rows && rows.length ? rows : getFilteredRows();
+      const highVolEl = document.getElementById("insightHighVolume");
+      const bestRateEl = document.getElementById("insightBestRate");
+      const topGrowthEl = document.getElementById("insightTopGrowth");
+      if (!highVolEl || !bestRateEl || !topGrowthEl) return;
+
       if (!visibleRows.length) {
-        document.getElementById("insightHighVolume").textContent = "No results";
-        document.getElementById("insightBestRate").textContent = "No results";
-        document.getElementById("insightTopGrowth").textContent = "No results";
+        highVolEl.textContent = "No results";
+        bestRateEl.textContent = "No results";
+        topGrowthEl.textContent = "No results";
         return;
       }
 
-      const highestVolume = [...visibleRows].sort((a,b) => Number(b.appliedTotal || b.Total || 0) - Number(a.appliedTotal || a.Total || 0))[0];
-      document.getElementById("insightHighVolume").textContent = `${highestVolume.label} (${formatNum(highestVolume.appliedTotal || highestVolume.Total || 0)})`;
+      const highestVolume = [...visibleRows].sort((a,b) => Number(b.appliedTotal ?? b.Total ?? 0) - Number(a.appliedTotal ?? a.Total ?? 0))[0];
+      highVolEl.textContent = `${highestVolume.label} (${formatNum(Number(highestVolume.appliedTotal ?? highestVolume.Total ?? 0))})`;
 
-      const bestRateRows = visibleRows.filter(r => Number(r.appliedTotal || 0) > 0);
+      const bestRateRows = visibleRows.filter(r => Number(r.appliedTotal ?? 0) > 0);
       if (bestRateRows.length) {
         const bestRate = [...bestRateRows].sort((a,b) => getTotalReturnRate(b) - getTotalReturnRate(a))[0];
-        document.getElementById("insightBestRate").textContent = `${bestRate.label} (${getTotalReturnRate(bestRate).toFixed(1)}%)`;
+        bestRateEl.textContent = `${bestRate.label} (${getTotalReturnRate(bestRate).toFixed(1)}%)`;
       } else {
-        document.getElementById("insightBestRate").textContent = "No results";
+        bestRateEl.textContent = "No results";
       }
 
       if (state.previousRows && state.previousRows.length) {
@@ -1846,41 +1838,13 @@
         const ranked = [...visibleRows].map(r => ({
           label: r.label,
           delta: state.detailTableMode === "returned"
-            ? (growthMap.get(r.label)?.returnedDelta || 0)
-            : (growthMap.get(r.label)?.appliedDelta || 0)
+            ? Number(growthMap.get(r.label)?.returnedDelta || 0)
+            : Number(growthMap.get(r.label)?.appliedDelta || 0)
         })).sort((a,b) => b.delta - a.delta);
         const top = ranked.find(r => r.delta > 0);
-        document.getElementById("insightTopGrowth").textContent = top ? `${top.label} (+${formatNum(top.delta)})` : "No positive growth";
+        topGrowthEl.textContent = top ? `${top.label} (+${formatNum(top.delta)})` : "No positive growth";
       } else {
-        document.getElementById("insightTopGrowth").textContent = "Upload previous CSV";
-      }
-    }
-
-
-    function updatePrintReportMeta(rows) {
-      const geo = dimensionMeta[state.dimension]?.label || state.dimension;
-      const ballot = state.ballotView === "all" ? "All voters" : (state.ballotView === "applied" ? "Applied ballots" : "Returned ballots");
-      const party = state.partyFilter === "ALL" ? "All parties" : (state.partyFilter === "D" ? "Democrats" : (state.partyFilter === "R" ? "Republicans" : "Other"));
-      const metric = document.getElementById("heatMetricSelect")?.selectedOptions?.[0]?.text?.replace("Heat Map Metric: ", "") || "Total Applied";
-      const filters = `${geo} | ${ballot} | ${party} | Map: ${metric}${state.search ? " | Selection: " + state.search : ""}`;
-      const currentDate = state.currentLastModified ? safeDateText(state.currentLastModified) : "Loaded";
-      const prevDate = state.previousLastModified ? safeDateText(state.previousLastModified) : "Not loaded";
-
-      const printFilters = document.getElementById("printReportFilters");
-      const printDates = document.getElementById("printReportDates");
-      const printSummary = document.getElementById("printExecutiveSummaryText");
-
-      if (printFilters) printFilters.textContent = `Filters: ${filters}`;
-      if (printDates) printDates.textContent = `Last updated: ${currentDate}`;
-
-      if (printSummary) {
-        const totals = computeVisibleTotals();
-        const highestVolumeEl = document.getElementById("insightHighVolume")?.textContent || "Unavailable";
-        const bestRateEl = document.getElementById("insightBestRate")?.textContent || "Unavailable";
-        const topGrowthEl = document.getElementById("insightTopGrowth")?.textContent || "Unavailable";
-        const rowCount = rows?.length || 0;
-        printSummary.textContent =
-          `This report summarizes ${formatNum(totals.Total)} voters across ${formatNum(rowCount)} ${dimensionMeta[state.dimension]?.groupLabel?.toLowerCase() || "groups"}. Highest volume: ${highestVolumeEl}. Best return rate: ${bestRateEl}. Top daily growth: ${topGrowthEl}.`;
+        topGrowthEl.textContent = "Upload previous CSV";
       }
     }
 
@@ -2021,11 +1985,15 @@
           totalPct = 100;
         }
 
+        const totalRate = Number(r.appliedTotal || 0) > 0 ? getTotalReturnRate(r) : 0;
+        const isPriority = state.targetingMode && Number(r.appliedTotal || 0) >= 100 && totalRate < 60;
+
         let badge = "";
         if (topLabels.has(r.label)) badge += '<span class="performer-badge performer-top">Top 5</span>';
         else if (bottomLabels.has(r.label)) badge += '<span class="performer-badge performer-bottom">Bottom 5</span>';
 
         if (growthLabels.has(r.label)) badge += '<span class="growth-badge">Top Daily Growth</span>';
+        if (isPriority) badge += '<span class="priority-flag">Priority</span>';
 
         return `
           <tr class="detail-row"
@@ -2058,7 +2026,6 @@
 
       const allRows = getFilteredRows();
       updateInsights(allRows);
-      updatePrintReportMeta(allRows);
 
       const chartRows = allRows.slice(0, state.limit);
       mainChart.data.labels = chartRows.map(r => r.label);
@@ -2178,6 +2145,20 @@
       document.getElementById("stackedBtn").classList.remove("active");
       refreshView();
     });
+    document.getElementById("downloadFilteredCsvBtn").addEventListener("click", exportFilteredCsv);
+    document.getElementById("targetingModeBtn").addEventListener("click", () => {
+      state.targetingMode = !state.targetingMode;
+      document.getElementById("targetingModeBtn").textContent = `Targeting Mode: ${state.targetingMode ? "On" : "Off"}`;
+      refreshView();
+    });
+    document.getElementById("clientViewBtn").addEventListener("click", () => {
+      setViewMode("client");
+      refreshView();
+    });
+    document.getElementById("analystViewBtn").addEventListener("click", () => {
+      setViewMode("analyst");
+      refreshView();
+    });
     document.getElementById("detailAppliedBtn").addEventListener("click", () => {
       state.detailTableMode = "applied";
       refreshView();
@@ -2191,14 +2172,20 @@
 
     async function loadPreviousWorkbook() {
       try {
-        const response = await fetch(PREVIOUS_DATA_FILE_URL, { method:"GET", cache:"no-store" });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        state.previousLastModified = response.headers.get("Last-Modified") || "";
-        const arrayBuffer = await response.arrayBuffer();
+        const { text, lastModified } = await fetchWithCache(PREVIOUS_DATA_FILE_URL);
+        state.previousLastModified = lastModified || "";
+        const arrayBuffer = new TextEncoder().encode(text).buffer;
         state.previousRows = parseWorkbookArrayBuffer(arrayBuffer);
       } catch (error) {
-        state.previousRows = [];
-        state.previousLastModified = "";
+        const cached = readCache(PREVIOUS_DATA_FILE_URL);
+        if (cached) {
+          const arrayBuffer = new TextEncoder().encode(cached).buffer;
+          state.previousRows = parseWorkbookArrayBuffer(arrayBuffer);
+          state.previousLastModified = "";
+        } else {
+          state.previousRows = [];
+          state.previousLastModified = "";
+        }
       }
     }
 
@@ -2206,15 +2193,17 @@
       try {
         showLoading(true);
         setStatus("Last updated: loading…");
-        const response = await fetch(DATA_FILE_URL, { method:"GET", cache:"no-store" });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        state.currentLastModified = response.headers.get("Last-Modified") || "";
-        const arrayBuffer = await response.arrayBuffer();
+        const { text, lastModified } = await fetchWithCache(DATA_FILE_URL);
+        state.currentLastModified = lastModified || "";
+        const arrayBuffer = new TextEncoder().encode(text).buffer;
         const rows = parseWorkbookArrayBuffer(arrayBuffer);
         if (!rows.length) throw new Error("No usable rows found in data file.");
         state.rawRows = rows;
         await loadPreviousWorkbook();
         refreshView();
+        updateCurrentFilterSummary();
+        updateFileStatus();
+        updateInsights(getFilteredRows());
         if (state.currentLastModified) {
           const date = new Date(state.currentLastModified);
           setStatus(`Last updated: <strong>${date.toLocaleString()}</strong>`);
@@ -2222,13 +2211,23 @@
           setStatus("Last updated: unavailable");
         }
       } catch (error) {
-        console.error(error);
-        setStatus("Last updated: unavailable. Error loading DataTable.csv");
+        const cached = readCache(DATA_FILE_URL);
+        if (cached) {
+          const arrayBuffer = new TextEncoder().encode(cached).buffer;
+          state.rawRows = parseWorkbookArrayBuffer(arrayBuffer);
+          await loadPreviousWorkbook();
+          refreshView();
+          setStatus("Last updated: loaded from browser cache");
+        } else {
+          console.error(error);
+          setStatus("Last updated: unavailable. Error loading DataTable.csv");
+        }
       } finally {
         showLoading(false);
       }
     }
 
+    setViewMode("analyst");
     loadHostedWorkbook();
   </script>
 </body>

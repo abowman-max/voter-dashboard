@@ -445,6 +445,12 @@
       display:flex;
       justify-content:flex-end;
       margin:10px 0 4px;
+      position:sticky;
+      top:8px;
+      z-index:999;
+    }
+    body.story-mode .story-toggle-row {
+      display:flex !important;
     }
     .mode-pill {
       display:inline-flex;
@@ -625,7 +631,7 @@
 
     <section class="micro-card-grid">
       <div class="mini-panel">
-        <h3>Insight Summary</h3>
+        <h3>Insight Summary</h3><div style="font-size:11px; color:#666; margin-bottom:6px;">Auto-generated from the current filters</div>
         <p id="insightNarrative">Loading insights…</p>
       </div>
       <div class="mini-panel">
@@ -638,7 +644,7 @@
         </table>
       </div>
       <div class="mini-panel">
-        <h3>Priority Areas</h3>
+        <h3>Priority Areas</h3><div style="font-size:11px; color:#666; margin-bottom:6px;">High-volume, lower-return opportunities</div>
         <div id="priorityAreaSummary">Loading priority areas…</div>
       </div>
     </section>

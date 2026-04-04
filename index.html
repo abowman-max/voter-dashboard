@@ -583,7 +583,7 @@
         Call us at <strong>(484) 571-7131</strong>.
       </div>
     </section>
-    <div class="story-toggle-row analyst-only">
+    <div class="story-toggle-row">
       <div class="mode-pill">
         <button id="clientViewBtn" type="button">Client View</button>
         <button id="analystViewBtn" class="active" type="button">Analyst View</button>
@@ -1997,6 +1997,9 @@
 
       const allRows = getFilteredRows();
       updateInsights(allRows);
+      updateMoverPanels(allRows);
+      updateHeatLegend();
+      updatePrintReportMeta(allRows);
 
       const chartRows = allRows.slice(0, state.limit);
       mainChart.data.labels = chartRows.map(r => r.label);

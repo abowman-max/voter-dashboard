@@ -67,7 +67,7 @@
       font-size:28px;
       line-height:1.08;
     }
-    .status-line { margin-top:6px; font-size:13px; color:var(--muted); }
+    .status-line { display:none !important; margin-top:6px; font-size:13px; color:var(--muted); }
     .promo {
       margin:16px 0;
       padding:16px 20px;
@@ -487,7 +487,7 @@
       }
 
       .hero {
-        display:block !important;
+        display:none !important;
         padding:0 0 10px 0 !important;
         margin:0 0 10px 0 !important;
         border:0 !important;
@@ -499,7 +499,7 @@
         margin:0 0 4px 0 !important;
       }
 
-      .status-line {
+      .status-line { display:none !important;
         margin-top:0 !important;
         font-size:11px !important;
         color:#444 !important;
@@ -565,22 +565,48 @@
       }
 
       #printReportHeader {
-        margin-bottom:14px !important;
+        margin-bottom:10px !important;
         border-bottom:2px solid #8d0d0d !important;
-        padding-bottom:10px !important;
+        padding-bottom:8px !important;
       }
 
-      #printReportHeader .title {
-        font-size:22px !important;
+      .print-header-row {
+        display:flex !important;
+        align-items:center !important;
+        gap:10px !important;
+      }
+
+      .print-logo {
+        height:28px !important;
+        width:auto !important;
+        display:block !important;
+      }
+
+      .print-header-text {
+        display:flex !important;
+        flex-direction:column !important;
+        justify-content:center !important;
+      }
+
+      .print-title {
+        font-size:18px !important;
         font-weight:700 !important;
         color:#8d0d0d !important;
-        margin-bottom:3px !important;
+        line-height:1.1 !important;
+        margin:0 0 2px 0 !important;
+      }
+
+      .print-date {
+        font-size:11px !important;
+        color:#444 !important;
+        line-height:1.2 !important;
       }
 
       #printReportHeader .subline {
         font-size:11px !important;
         color:#444 !important;
-        margin-bottom:3px !important;
+        margin-top:6px !important;
+        margin-bottom:0 !important;
       }
 
       #printExecutiveSummary {
@@ -699,9 +725,14 @@
 <body>
   <div class="page">
   <section id="printReportHeader" class="print-only">
-    <div class="title">TSS MIB Dashboard Report</div>
+    <div class="print-header-row">
+      <img src="https://static.wixstatic.com/media/b45117_afe41d8982634f35a4af7e1de54101cf~mv2.jpeg/v1/crop/x_0%2Cy_27%2Cw_828%2Ch_332/fill/w_828%2Ch_332%2Cal_c%2Cq_80%2Cenc_avif%2Cquality_auto/TSS%20Logo%20copy.jpeg" alt="TSS Logo" class="print-logo">
+      <div class="print-header-text">
+        <div class="print-title">TSS MIB Dashboard</div>
+        <div class="print-date" id="printReportDates">Loading…</div>
+      </div>
+    </div>
     <div class="subline" id="printReportFilters">Filters</div>
-    <div class="subline" id="printReportDates">File dates</div>
   </section>
   <section id="printExecutiveSummary" class="print-only">
     <div class="summary-title">Executive Summary</div>
@@ -1840,7 +1871,7 @@
       const printSummary = document.getElementById("printExecutiveSummaryText");
 
       if (printFilters) printFilters.textContent = `Filters: ${filters}`;
-      if (printDates) printDates.textContent = `Current file: ${currentDate} | Previous file: ${prevDate}`;
+      if (printDates) printDates.textContent = `Last updated: ${currentDate}`;
 
       if (printSummary) {
         const totals = computeVisibleTotals();

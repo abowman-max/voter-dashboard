@@ -1848,6 +1848,32 @@
       }
     }
 
+    function updatePrintReportMeta(rows) {
+      const geo = dimensionMeta[state.dimension]?.label || state.dimension;
+      const ballot = state.ballotView === "all" ? "All voters" : (state.ballotView === "applied" ? "Applied ballots" : "Returned ballots");
+      const party = state.partyFilter === "ALL" ? "All parties" : (state.partyFilter === "D" ? "Democrats" : (state.partyFilter === "R" ? "Republicans" : "Other"));
+      const metric = document.getElementById("heatMetricSelect")?.selectedOptions?.[0]?.text?.replace("Heat Map Metric: ", "") || "Total Applied";
+      const filters = `${geo} | ${ballot} | ${party} | Map: ${metric}${state.search ? " | Selection: " + state.search : ""}`;
+      const currentDate = state.currentLastModified ? safeDateText(state.currentLastModified) : "Loaded";
+      const prevDate = state.previousLastModified ? safeDateText(state.previousLastModified) : "Not loaded";
+
+      const printFilters = document.getElementById("printReportFilters");
+      const printDates = document.getElementById("printReportDates");
+      const printSummary = document.getElementById("printExecutiveSummaryText");
+
+      if (printFilters) printFilters.textContent = `Filters: ${filters}`;
+      if (printDates) printDates.textContent = `Last updated: ${currentDate}`;
+
+      if (printSummary) {
+        const totals = computeVisibleTotals();
+        const highestVolumeEl = document.getElementById("insightHighVolume")?.textContent || "Unavailable";
+        const bestRateEl = document.getElementById("insightBestRate")?.textContent || "Unavailable";
+        const topGrowthEl = document.getElementById("insightTopGrowth")?.textContent || "Unavailable";
+        const rowCount = rows?.length || 0;
+        printSummary.textContent = `This report summarizes ${formatNum(totals.Total)} voters across ${formatNum(rowCount)} ${dimensionMeta[state.dimension]?.groupLabel?.toLowerCase() || "groups"}. Highest volume: ${highestVolumeEl}. Best return rate: ${bestRateEl}. Top daily growth: ${topGrowthEl}. ${state.targetingMode ? "Targeting mode is active for priority-area review." : ""}`;
+      }
+    }
+
     function updateHeaderText() {
       const meta = dimensionMeta[state.dimension];
       document.getElementById("firstColHeader").textContent = meta.label;

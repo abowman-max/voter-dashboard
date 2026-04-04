@@ -7,7 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-geo@4.3.6/build/index.umd.min.js"></script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     :root {
       --bg:#f5f2ef;
@@ -308,6 +308,8 @@
       .daily-layout { grid-template-columns:1fr; }
       .breakdown-grid { grid-template-columns:1fr; }
     }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
     @media (max-width:760px) {
       .hero { grid-template-columns:1fr; }
       .stats { grid-template-columns:1fr; }
@@ -470,6 +472,46 @@
         Call us at <strong>(484) 571-7131</strong>.
       </div>
     </section>
+    <section class="card" style="padding:14px 18px; margin:16px 0;">
+      <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:flex-start;">
+        <div>
+          <div style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Current Filters</div>
+          <div id="currentFilterSummary" style="font-size:15px; color:var(--ink); font-weight:600;">Loading filters…</div>
+        </div>
+        <div style="display:flex; gap:18px; flex-wrap:wrap;">
+          <div>
+            <div style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;">Current data file</div>
+            <div id="currentDataFileStatus" style="font-size:14px; color:var(--ink);">Loading…</div>
+          </div>
+          <div>
+            <div style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;">Previous data file</div>
+            <div id="previousDataFileStatus" style="font-size:14px; color:var(--ink);">Loading…</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats" style="margin-top:0;" id="insightStrip">
+      <div class="card stat">
+        <div class="label">Highest Volume</div>
+        <div class="value" id="insightHighVolume" style="font-size:22px;">—</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Best Return Rate</div>
+        <div class="value" id="insightBestRate" style="font-size:22px;">—</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Top Daily Growth</div>
+        <div class="value" id="insightTopGrowth" style="font-size:22px;">—</div>
+      </div>
+    </section>
+
+    <div id="loadingOverlay" style="position:fixed; inset:0; background:rgba(247,244,242,.82); display:none; align-items:center; justify-content:center; z-index:10000;">
+      <div style="background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); padding:22px 26px; display:flex; align-items:center; gap:14px;">
+        <div style="width:18px; height:18px; border:3px solid #ddd; border-top-color:var(--brand); border-radius:50%; animation:spin 1s linear infinite;"></div>
+        <div style="font-size:15px; color:var(--ink); font-weight:600;">Updating dashboard…</div>
+      </div>
+    </div>
 
     <section class="stats">
       <div class="card stat">
@@ -496,7 +538,7 @@
 
     <section class="card section">
       <h2>Daily Change</h2>
-      <p>New ballot activity since the previous day’s file. This compares the current <strong>DataTable.xlsx</strong> against a hosted <strong>PreviousDataTable.xlsx</strong> and organizes it by party.</p>
+      <p>New ballot activity since the previous day’s file. This compares the current <strong>DataTable.csv</strong> against a hosted <strong>PreviousDataTable.csv</strong> and organizes it by party.</p>
       <div class="daily-layout">
         <div>
           <div class="mini-chart" style="height:240px;">
@@ -673,14 +715,14 @@
           <button id="stackedBtn" class="active" type="button">Stacked</button>
           <button id="groupedBtn" type="button">Grouped</button>
         </div>
-        <button id="printReportBtn" type="button">Print PDF Report</button>
+        <button id="printReportBtn" type="button">Export Client PDF</button>
       </div>
       <div class="chart-wrap" style="overflow-x:auto; overflow-y:hidden;">
         <div id="mainChartInner" style="min-width:1200px; height:100%;">
           <canvas id="mainChart"></canvas>
         </div>
       </div>
-      <div class="foot">Chart respects the Top 10 / 25 / 50 / All setting. The detail table below always shows all matching rows.</div>
+      <div class="foot" id="comparisonFoot">Chart respects the Top 10 / 25 / 50 / All setting. The detail table below always shows all matching rows.</div>
     </section>
 
     <section class="card section">
@@ -723,8 +765,8 @@
   <div id="heatTooltip" class="heat-tooltip"></div>
 
   <script>
-    const DATA_FILE_URL = "./DataTable.xlsx";
-    const PREVIOUS_DATA_FILE_URL = "./PreviousDataTable.xlsx";
+    const DATA_FILE_URL = "./DataTable.csv";
+    const PREVIOUS_DATA_FILE_URL = "./PreviousDataTable.csv";
     const PA_COUNTY_GEOJSON_URL = "https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json";
     const PA_CONGRESSIONAL_GEOJSON_URL = "./usc.geojson";
     const PA_HOUSE_GEOJSON_URL = "./sth.geojson";
@@ -755,7 +797,9 @@
         hasPrevious: false,
         appliedByParty: { D:0, R:0, O:0 },
         returnedByParty: { D:0, R:0, O:0 }
-      }
+      },
+      currentLastModified: "",
+      previousLastModified: ""
     };
 
     let heatMapChart = null;
@@ -769,6 +813,18 @@
       .replace(/"/g, "&quot;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+
+
+    function showLoading(show = true) {
+      const el = document.getElementById("loadingOverlay");
+      if (el) el.style.display = show ? "flex" : "none";
+    }
+
+    function safeDateText(value) {
+      if (!value) return "Unavailable";
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? "Unavailable" : d.toLocaleString();
+    }
 
     function setStatus(message) {
       document.getElementById("dataStatus").innerHTML = message;
@@ -806,10 +862,16 @@
     }
 
     function parseWorkbookArrayBuffer(arrayBuffer) {
-      const workbook = XLSX.read(arrayBuffer, { type: "array" });
-      const preferredSheet = workbook.Sheets["DataTable"] || workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(preferredSheet, { defval: "" });
-      return hydrateRows(rows);
+      const text = new TextDecoder("utf-8").decode(arrayBuffer);
+      const parsed = Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: false
+      });
+      if (parsed.errors && parsed.errors.length) {
+        console.warn("CSV parse warnings:", parsed.errors);
+      }
+      return hydrateRows(Array.isArray(parsed.data) ? parsed.data : []);
     }
 
     function isAppliedRow(row) {
@@ -1460,6 +1522,56 @@
       document.getElementById("partyBreakStatus").textContent = "Showing statewide party, gender, and age breakdowns. Hover over any row in the data table to see a quick party popup for that geography.";
     }
 
+
+    function updateCurrentFilterSummary() {
+      const geo = dimensionMeta[state.dimension]?.label || state.dimension;
+      const ballot = state.ballotView === "all" ? "All voters" : (state.ballotView === "applied" ? "Applied ballots" : "Returned ballots");
+      const party = state.partyFilter === "ALL" ? "All parties" : (state.partyFilter === "D" ? "Democrats" : (state.partyFilter === "R" ? "Republicans" : "Other"));
+      const heatMetric = document.getElementById("heatMetricSelect")?.selectedOptions?.[0]?.text?.replace("Heat Map Metric: ", "") || "Total Applied";
+      const search = state.search ? ` | Selection: ${state.search}` : "";
+      document.getElementById("currentFilterSummary").textContent = `${geo} | ${ballot} | ${party} | Map: ${heatMetric}${search}`;
+    }
+
+    function updateFileStatus() {
+      document.getElementById("currentDataFileStatus").textContent = safeDateText(state.currentLastModified);
+      document.getElementById("previousDataFileStatus").textContent = state.previousLastModified ? safeDateText(state.previousLastModified) : "Not loaded";
+    }
+
+    function updateInsights(rows) {
+      const visibleRows = rows && rows.length ? rows : getFilteredRows();
+      if (!visibleRows.length) {
+        document.getElementById("insightHighVolume").textContent = "No results";
+        document.getElementById("insightBestRate").textContent = "No results";
+        document.getElementById("insightTopGrowth").textContent = "No results";
+        return;
+      }
+
+      const highestVolume = [...visibleRows].sort((a,b) => Number(b.appliedTotal || b.Total || 0) - Number(a.appliedTotal || a.Total || 0))[0];
+      document.getElementById("insightHighVolume").textContent = `${highestVolume.label} (${formatNum(highestVolume.appliedTotal || highestVolume.Total || 0)})`;
+
+      const bestRateRows = visibleRows.filter(r => Number(r.appliedTotal || 0) > 0);
+      if (bestRateRows.length) {
+        const bestRate = [...bestRateRows].sort((a,b) => getTotalReturnRate(b) - getTotalReturnRate(a))[0];
+        document.getElementById("insightBestRate").textContent = `${bestRate.label} (${getTotalReturnRate(bestRate).toFixed(1)}%)`;
+      } else {
+        document.getElementById("insightBestRate").textContent = "No results";
+      }
+
+      if (state.previousRows && state.previousRows.length) {
+        const growthMap = computeGeographyGrowthMap(state.dimension);
+        const ranked = [...visibleRows].map(r => ({
+          label: r.label,
+          delta: state.detailTableMode === "returned"
+            ? (growthMap.get(r.label)?.returnedDelta || 0)
+            : (growthMap.get(r.label)?.appliedDelta || 0)
+        })).sort((a,b) => b.delta - a.delta);
+        const top = ranked.find(r => r.delta > 0);
+        document.getElementById("insightTopGrowth").textContent = top ? `${top.label} (+${formatNum(top.delta)})` : "No positive growth";
+      } else {
+        document.getElementById("insightTopGrowth").textContent = "Upload previous CSV";
+      }
+    }
+
     function updateHeaderText() {
       const meta = dimensionMeta[state.dimension];
       document.getElementById("firstColHeader").textContent = meta.label;
@@ -1489,7 +1601,7 @@
         state.detailTableMode === "returned"
           ? `Statewide benchmark return rate: ${benchmark}%. Top 5, bottom 5, and top daily growth areas are tagged below.`
           : (state.dailyDelta && state.dailyDelta.hasPrevious
-              ? `Top 5, bottom 5, and top daily growth areas are tagged below using PreviousDataTable.xlsx as the prior day baseline.`
+              ? `Top 5, bottom 5, and top daily growth areas are tagged below using PreviousDataTable.csv as the prior day baseline.`
               : ``);
 
       document.getElementById("detailAppliedBtn").classList.toggle("active", state.detailTableMode === "applied");
@@ -1573,6 +1685,10 @@
           .forEach(r => growthLabels.add(r.label));
       }
 
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="9" style="padding:18px 16px; color:#666;">No rows match the current filters.</td></tr>`;
+        return;
+      }
       tbody.innerHTML = rows.map(r => {
         const dVal = state.detailTableMode === "returned" ? (r.returnedD || 0) : (r.appliedD || 0);
         const oVal = state.detailTableMode === "returned" ? (r.returnedO || 0) : (r.appliedO || 0);
@@ -1664,11 +1780,11 @@
       if (state.ballotView === "all") {
         document.getElementById("dailyChangeStatus").textContent = state.dailyDelta.hasPrevious
           ? "Daily change compares current and previous files by party."
-          : "To show daily change, upload a previous-day file named PreviousDataTable.xlsx in the same GitHub folder.";
+          : "To show daily change, upload a previous-day file named PreviousDataTable.csv in the same GitHub folder.";
       } else {
         document.getElementById("dailyChangeStatus").textContent = state.dailyDelta.hasPrevious
-          ? `Daily change shown versus PreviousDataTable.xlsx for ${partyText}.`
-          : `To show daily change, upload a previous-day file named PreviousDataTable.xlsx in the same GitHub folder.`;
+          ? `Daily change shown versus PreviousDataTable.csv for ${partyText}.`
+          : `To show daily change, upload a previous-day file named PreviousDataTable.csv in the same GitHub folder.`;
       }
 
       renderHeatMap();
@@ -1753,34 +1869,39 @@
       try {
         const response = await fetch(PREVIOUS_DATA_FILE_URL, { method:"GET", cache:"no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        state.previousLastModified = response.headers.get("Last-Modified") || "";
         const arrayBuffer = await response.arrayBuffer();
         state.previousRows = parseWorkbookArrayBuffer(arrayBuffer);
       } catch (error) {
         state.previousRows = [];
+        state.previousLastModified = "";
       }
     }
 
     async function loadHostedWorkbook() {
       try {
+        showLoading(true);
         setStatus("Last updated: loading…");
         const response = await fetch(DATA_FILE_URL, { method:"GET", cache:"no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const lastModified = response.headers.get("Last-Modified");
+        state.currentLastModified = response.headers.get("Last-Modified") || "";
         const arrayBuffer = await response.arrayBuffer();
         const rows = parseWorkbookArrayBuffer(arrayBuffer);
-        if (!rows.length) throw new Error("No usable rows found in workbook.");
+        if (!rows.length) throw new Error("No usable rows found in data file.");
         state.rawRows = rows;
         await loadPreviousWorkbook();
         refreshView();
-        if (lastModified) {
-          const date = new Date(lastModified);
+        if (state.currentLastModified) {
+          const date = new Date(state.currentLastModified);
           setStatus(`Last updated: <strong>${date.toLocaleString()}</strong>`);
         } else {
           setStatus("Last updated: unavailable");
         }
       } catch (error) {
         console.error(error);
-        setStatus("Last updated: unavailable. Error loading DataTable.xlsx");
+        setStatus("Last updated: unavailable. Error loading DataTable.csv");
+      } finally {
+        showLoading(false);
       }
     }
 

@@ -363,7 +363,7 @@
 
 
     .heat-tooltip {
-      position: fixed;
+      position: absolute;
       z-index: 9999;
       pointer-events: none;
       background: rgba(35,35,35,.94);
@@ -1174,8 +1174,8 @@
               : `${districtPrefix(dimension)} ${label}`;
             const formatted = metric === "return_rate" ? value.toFixed(1) + "%" : formatNum(value);
             tooltip.style.display = "block";
-            tooltip.style.left = (event.clientX + 2) + "px";
-            tooltip.style.top = (event.clientY + 2) + "px";
+            tooltip.style.left = (event.pageX + 2) + "px";
+            tooltip.style.top = (event.pageY + 2) + "px";
             tooltip.innerHTML = `<strong>${displayName}</strong><br>${metricLabel}: ${formatted}`;
           })
           .on("mouseleave", function() {

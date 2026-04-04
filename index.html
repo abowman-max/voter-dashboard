@@ -444,7 +444,7 @@
     .story-toggle-row {
       display:flex;
       justify-content:flex-end;
-      margin:10px 0 2px;
+      margin:10px 0 4px;
     }
     .mode-pill {
       display:inline-flex;
@@ -452,6 +452,7 @@
       border-radius:999px;
       overflow:hidden;
       background:#fff;
+      box-shadow:var(--shadow);
     }
     .mode-pill button {
       border:0;
@@ -466,8 +467,9 @@
       color:#fff;
       font-weight:700;
     }
-    .story-mode .analyst-only { display:none !important; }
-    .story-mode .page { max-width:1200px; }
+    body.story-mode .analyst-only {
+      display:none !important;
+    }
     .micro-card-grid {
       display:grid;
       grid-template-columns:repeat(3,1fr);
@@ -495,6 +497,18 @@
       margin:8px 0 0 18px;
       padding:0;
     }
+    .soft-table {
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+    }
+    .soft-table td {
+      padding:8px 0;
+      border-bottom:1px solid #eee6e1;
+      font-size:14px;
+      vertical-align:top;
+    }
+    .soft-table tr:last-child td { border-bottom:0; }
     .legend-row {
       display:flex;
       gap:10px;
@@ -516,17 +530,13 @@
       display:inline-block;
       border:1px solid rgba(0,0,0,.08);
     }
-    .soft-table {
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0;
+    .download-btn {
+      border:1px solid var(--brand);
+      background:#fff;
+      color:var(--brand);
+      font-weight:700;
+      cursor:pointer;
     }
-    .soft-table td {
-      padding:8px 0;
-      border-bottom:1px solid #eee6e1;
-      font-size:14px;
-    }
-    .soft-table tr:last-child td { border-bottom:0; }
     .priority-flag {
       display:inline-block;
       padding:3px 8px;
@@ -536,13 +546,6 @@
       background:#fff4d6;
       color:#8c6400;
       margin-left:6px;
-    }
-    .download-btn {
-      border:1px solid var(--brand);
-      background:#fff;
-      color:var(--brand);
-      font-weight:700;
-      cursor:pointer;
     }
     @media (max-width:1080px) {
       .micro-card-grid { grid-template-columns:1fr; }
@@ -811,7 +814,7 @@
       </div>
     </section>
 
-    <section class="card section page-break-before avoid-break">
+    <section class="card section">
       <h2>Comparison View</h2>
       <p>Use the dropdowns to switch geography, choose all voters or ballot activity views, and filter by party.</p>
       <div class="toolbar">
@@ -864,7 +867,7 @@
       <div class="foot" id="comparisonFoot">Chart respects the Top 10 / 25 / 50 / All setting. The detail table below always shows all matching rows.</div>
     </section>
 
-    <section class="card section page-break-before">
+    <section class="card section">
       <h2 id="tableTitle">County Detail Table</h2>
       <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
       <div id="detailBenchmarkNote" class="benchmark-note" style="margin-bottom:10px;"></div>
@@ -968,31 +971,6 @@
     }
 
 
-    function cacheKey(url) {
-      return `tss_cache::${url}`;
-    }
-
-    async function fetchWithCache(url) {
-      const response = await fetch(url, { method:"GET", cache:"no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const text = await response.text();
-      try {
-        localStorage.setItem(cacheKey(url), text);
-      } catch (e) {}
-      return {
-        text,
-        lastModified: response.headers.get("Last-Modified") || ""
-      };
-    }
-
-    function readCache(url) {
-      try {
-        return localStorage.getItem(cacheKey(url)) || "";
-      } catch (e) {
-        return "";
-      }
-    }
-
     function setViewMode(mode) {
       state.viewMode = mode;
       document.body.classList.toggle("story-mode", mode === "client");
@@ -1022,6 +1000,72 @@
       a.download = `tss_filtered_view_${state.dimension.toLowerCase()}.csv`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+
+    function updateHeatLegend() {
+      const row = document.getElementById("heatLegendRow");
+      const metric = document.getElementById("heatMetricSelect")?.value || "applied_total";
+      if (!row) return;
+      if (metric === "return_rate") {
+        row.innerHTML = `
+          <span class="legend-chip"><span class="legend-swatch" style="background:#f5b6ad;"></span>Low rate</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#f3e7a6;"></span>Mid rate</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#bfe3bf;"></span>High rate</span>`;
+      } else {
+        row.innerHTML = `
+          <span class="legend-chip"><span class="legend-swatch" style="background:#f5e8e5;"></span>Low</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#cf8f7f;"></span>Medium</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#8d0d0d;"></span>High</span>`;
+      }
+    }
+
+    function updateMoverPanels(rows) {
+      const visibleRows = rows && rows.length ? rows : getFilteredRows();
+      const topEl = document.getElementById("topMoverValue");
+      const bottomEl = document.getElementById("bottomMoverValue");
+      const priorityEl = document.getElementById("priorityAreaSummary");
+      const narrativeEl = document.getElementById("insightNarrative");
+      if (!topEl || !bottomEl || !priorityEl || !narrativeEl) return;
+
+      if (!visibleRows.length) {
+        topEl.textContent = "No results";
+        bottomEl.textContent = "No results";
+        priorityEl.textContent = "No results";
+        narrativeEl.textContent = "No results for the current filters.";
+        return;
+      }
+
+      let rankedGrowth = [];
+      if (state.previousRows && state.previousRows.length) {
+        const growthMap = computeGeographyGrowthMap(state.dimension);
+        rankedGrowth = visibleRows.map(r => ({
+          label: r.label,
+          delta: state.detailTableMode === "returned"
+            ? Number(growthMap.get(r.label)?.returnedDelta || 0)
+            : Number(growthMap.get(r.label)?.appliedDelta || 0)
+        })).sort((a,b) => b.delta - a.delta);
+      }
+
+      const topMover = rankedGrowth.length ? rankedGrowth[0] : null;
+      const bottomMover = rankedGrowth.length ? [...rankedGrowth].sort((a,b) => a.delta - b.delta)[0] : null;
+      topEl.textContent = topMover ? `${topMover.label} (${topMover.delta > 0 ? "+" : ""}${formatNum(topMover.delta)})` : "Upload previous CSV";
+      bottomEl.textContent = bottomMover ? `${bottomMover.label} (${bottomMover.delta > 0 ? "+" : ""}${formatNum(bottomMover.delta)})` : "Upload previous CSV";
+
+      const priorityRows = visibleRows
+        .filter(r => Number(r.appliedTotal || 0) > 0)
+        .map(r => ({ label: r.label, applied: Number(r.appliedTotal || 0), rate: getTotalReturnRate(r) }))
+        .sort((a,b) => (b.applied * (100 - b.rate)) - (a.applied * (100 - a.rate)))
+        .slice(0,3);
+
+      priorityEl.innerHTML = priorityRows.length
+        ? `<ul>${priorityRows.map(r => `<li><strong>${r.label}</strong> — ${formatNum(r.applied)} applied, ${r.rate.toFixed(1)}% return rate${state.targetingMode ? ' <span class="priority-flag">Priority</span>' : ''}</li>`).join("")}</ul>`
+        : "No priority areas found.";
+
+      const highestVolume = [...visibleRows].sort((a,b) => Number(b.appliedTotal ?? b.Total ?? 0) - Number(a.appliedTotal ?? a.Total ?? 0))[0];
+      const bestRateRows = visibleRows.filter(r => Number(r.appliedTotal ?? 0) > 0);
+      const bestRate = bestRateRows.length ? [...bestRateRows].sort((a,b) => getTotalReturnRate(b) - getTotalReturnRate(a))[0] : null;
+      const growthSentence = topMover ? `${topMover.label} shows the fastest daily movement at ${topMover.delta > 0 ? "+" : ""}${formatNum(topMover.delta)}.` : `Daily growth will appear after a previous-day CSV is uploaded.`;
+      narrativeEl.textContent = `${highestVolume.label} leads the current view with ${formatNum(Number(highestVolume.appliedTotal ?? highestVolume.Total ?? 0))} applied voters. ${bestRate ? `${bestRate.label} has the strongest return rate at ${getTotalReturnRate(bestRate).toFixed(1)}%.` : `A return-rate leader is not available for the current filters.`} ${growthSentence}`;
     }
 
     function setStatus(message) {
@@ -1721,79 +1765,6 @@
     }
 
 
-
-    function updateHeatLegend() {
-      const row = document.getElementById("heatLegendRow");
-      const metric = document.getElementById("heatMetricSelect")?.value || "applied_total";
-      if (!row) return;
-      if (metric === "return_rate") {
-        row.innerHTML = `
-          <span class="legend-chip"><span class="legend-swatch" style="background:#f5b6ad;"></span>Low rate</span>
-          <span class="legend-chip"><span class="legend-swatch" style="background:#f3e7a6;"></span>Mid rate</span>
-          <span class="legend-chip"><span class="legend-swatch" style="background:#bfe3bf;"></span>High rate</span>`;
-      } else {
-        row.innerHTML = `
-          <span class="legend-chip"><span class="legend-swatch" style="background:#f5e8e5;"></span>Low</span>
-          <span class="legend-chip"><span class="legend-swatch" style="background:#cf8f7f;"></span>Medium</span>
-          <span class="legend-chip"><span class="legend-swatch" style="background:#8d0d0d;"></span>High</span>`;
-      }
-    }
-
-    function updateMoverPanels(rows) {
-      const visibleRows = rows && rows.length ? rows : getFilteredRows();
-      const topEl = document.getElementById("topMoverValue");
-      const bottomEl = document.getElementById("bottomMoverValue");
-      const priorityEl = document.getElementById("priorityAreaSummary");
-      const narrativeEl = document.getElementById("insightNarrative");
-      if (!topEl || !bottomEl || !priorityEl || !narrativeEl) return;
-
-      if (!visibleRows.length) {
-        topEl.textContent = "No results";
-        bottomEl.textContent = "No results";
-        priorityEl.textContent = "No results";
-        narrativeEl.textContent = "No results for the current filters.";
-        return;
-      }
-
-      let rankedGrowth = [];
-      if (state.previousRows && state.previousRows.length) {
-        const growthMap = computeGeographyGrowthMap(state.dimension);
-        rankedGrowth = visibleRows.map(r => ({
-          label: r.label,
-          delta: state.detailTableMode === "returned"
-            ? Number(growthMap.get(r.label)?.returnedDelta || 0)
-            : Number(growthMap.get(r.label)?.appliedDelta || 0)
-        })).sort((a,b) => b.delta - a.delta);
-      }
-
-      const topMover = rankedGrowth.length ? rankedGrowth[0] : null;
-      const bottomMover = rankedGrowth.length ? [...rankedGrowth].sort((a,b) => a.delta - b.delta)[0] : null;
-
-      topEl.textContent = topMover ? `${topMover.label} (${topMover.delta > 0 ? "+" : ""}${formatNum(topMover.delta)})` : "Upload previous CSV";
-      bottomEl.textContent = bottomMover ? `${bottomMover.label} (${bottomMover.delta > 0 ? "+" : ""}${formatNum(bottomMover.delta)})` : "Upload previous CSV";
-
-      const priorityRows = visibleRows
-        .filter(r => Number(r.appliedTotal || 0) > 0)
-        .map(r => ({
-          label: r.label,
-          applied: Number(r.appliedTotal || 0),
-          rate: getTotalReturnRate(r)
-        }))
-        .filter(r => r.applied > 0)
-        .sort((a,b) => (b.applied * (100 - b.rate)) - (a.applied * (100 - a.rate)))
-        .slice(0,3);
-
-      priorityEl.innerHTML = priorityRows.length
-        ? `<ul>${priorityRows.map(r => `<li><strong>${r.label}</strong> — ${formatNum(r.applied)} applied, ${r.rate.toFixed(1)}% return rate <span class="priority-flag">Priority</span></li>`).join("")}</ul>`
-        : "No priority areas found.";
-
-      const highestVolume = [...visibleRows].sort((a,b) => Number(b.appliedTotal ?? b.Total ?? 0) - Number(a.appliedTotal ?? a.Total ?? 0))[0];
-      const bestRateRows = visibleRows.filter(r => Number(r.appliedTotal ?? 0) > 0);
-      const bestRate = bestRateRows.length ? [...bestRateRows].sort((a,b) => getTotalReturnRate(b) - getTotalReturnRate(a))[0] : null;
-      const growthSentence = topMover ? `${topMover.label} shows the fastest daily movement at ${topMover.delta > 0 ? "+" : ""}${formatNum(topMover.delta)}.` : `Daily growth will appear after a previous-day CSV is uploaded.`;
-      narrativeEl.textContent = `${highestVolume.label} leads the current view with ${formatNum(Number(highestVolume.appliedTotal ?? highestVolume.Total ?? 0))} applied voters. ${bestRate ? `${bestRate.label} has the strongest return rate at ${getTotalReturnRate(bestRate).toFixed(1)}%.` : `A return-rate leader is not available for the current filters.`} ${growthSentence}`;
-    }
-
     function updateCurrentFilterSummary() {
       const geo = dimensionMeta[state.dimension]?.label || state.dimension;
       const ballot = state.ballotView === "all" ? "All voters" : (state.ballotView === "applied" ? "Applied ballots" : "Returned ballots");
@@ -1845,31 +1816,6 @@
         topGrowthEl.textContent = top ? `${top.label} (+${formatNum(top.delta)})` : "No positive growth";
       } else {
         topGrowthEl.textContent = "Upload previous CSV";
-      }
-    }
-
-    function updatePrintReportMeta(rows) {
-      const geo = dimensionMeta[state.dimension]?.label || state.dimension;
-      const ballot = state.ballotView === "all" ? "All voters" : (state.ballotView === "applied" ? "Applied ballots" : "Returned ballots");
-      const party = state.partyFilter === "ALL" ? "All parties" : (state.partyFilter === "D" ? "Democrats" : (state.partyFilter === "R" ? "Republicans" : "Other"));
-      const metric = document.getElementById("heatMetricSelect")?.selectedOptions?.[0]?.text?.replace("Heat Map Metric: ", "") || "Total Applied";
-      const filters = `${geo} | ${ballot} | ${party} | Map: ${metric}${state.search ? " | Selection: " + state.search : ""}`;
-      const currentDate = state.currentLastModified ? safeDateText(state.currentLastModified) : "Loaded";
-      const printFilters = document.getElementById("printReportFilters");
-      const printDates = document.getElementById("printReportDates");
-      const printSummary = document.getElementById("printExecutiveSummaryText");
-
-      if (printFilters) printFilters.textContent = `Filters: ${filters}`;
-      if (printDates) printDates.textContent = `Last updated: ${currentDate}`;
-
-      if (printSummary) {
-        const totals = computeVisibleTotals();
-        const highestVolumeEl = document.getElementById("insightHighVolume")?.textContent || "Unavailable";
-        const bestRateEl = document.getElementById("insightBestRate")?.textContent || "Unavailable";
-        const topGrowthEl = document.getElementById("insightTopGrowth")?.textContent || "Unavailable";
-        const rowCount = rows?.length || 0;
-        printSummary.textContent =
-          `This report summarizes ${formatNum(totals.Total)} voters across ${formatNum(rowCount)} ${dimensionMeta[state.dimension]?.groupLabel?.toLowerCase() || "groups"}. Highest volume: ${highestVolumeEl}. Best return rate: ${bestRateEl}. Top daily growth: ${topGrowthEl}. ${state.targetingMode ? "Targeting mode is active for priority-area review." : ""}`;
       }
     }
 
@@ -2051,9 +1997,6 @@
 
       const allRows = getFilteredRows();
       updateInsights(allRows);
-      if (typeof updateMoverPanels === "function") updateMoverPanels(allRows);
-      if (typeof updateHeatLegend === "function") updateHeatLegend();
-      if (typeof updatePrintReportMeta === "function") updatePrintReportMeta(allRows);
 
       const chartRows = allRows.slice(0, state.limit);
       mainChart.data.labels = chartRows.map(r => r.label);
@@ -2061,7 +2004,7 @@
       const chartInner = document.getElementById("mainChartInner");
       const perLabelWidth = 70;
       const minWidth = 1200;
-      if (chartInner) chartInner.style.width = Math.max(minWidth, chartRows.length * perLabelWidth) + "px";
+      chartInner.style.width = Math.max(minWidth, chartRows.length * perLabelWidth) + "px";
 
       mainChart.data.datasets[0].data = chartRows.map(r => r.D);
       mainChart.data.datasets[1].data = chartRows.map(r => r.O);
@@ -2107,7 +2050,6 @@
       }
 
       renderHeatMap();
-    }
     }
 
     const detailTableBody = document.querySelector("#detailTable tbody");
@@ -2174,10 +2116,19 @@
       document.getElementById("stackedBtn").classList.remove("active");
       refreshView();
     });
+    document.getElementById("detailAppliedBtn").addEventListener("click", () => {
+      state.detailTableMode = "applied";
+      refreshView();
+    });
+    document.getElementById("detailReturnedBtn").addEventListener("click", () => {
+      state.detailTableMode = "returned";
+      refreshView();
+    });
     document.getElementById("downloadFilteredCsvBtn")?.addEventListener("click", exportFilteredCsv);
     document.getElementById("targetingModeBtn")?.addEventListener("click", () => {
       state.targetingMode = !state.targetingMode;
-      document.getElementById("targetingModeBtn").textContent = `Targeting Mode: ${state.targetingMode ? "On" : "Off"}`;
+      const btn = document.getElementById("targetingModeBtn");
+      if (btn) btn.textContent = `Targeting Mode: ${state.targetingMode ? "On" : "Off"}`;
       refreshView();
     });
     document.getElementById("clientViewBtn")?.addEventListener("click", () => {
@@ -2188,33 +2139,19 @@
       setViewMode("analyst");
       refreshView();
     });
-    document.getElementById("detailAppliedBtn").addEventListener("click", () => {
-      state.detailTableMode = "applied";
-      refreshView();
-    });
-    document.getElementById("detailReturnedBtn").addEventListener("click", () => {
-      state.detailTableMode = "returned";
-      refreshView();
-    });
     document.getElementById("printReportBtn").addEventListener("click", () => window.print());
     document.getElementById("heatMetricSelect").addEventListener("change", () => renderHeatMap());
 
     async function loadPreviousWorkbook() {
       try {
-        const { text, lastModified } = await fetchWithCache(PREVIOUS_DATA_FILE_URL);
-        state.previousLastModified = lastModified || "";
-        const arrayBuffer = new TextEncoder().encode(text).buffer;
+        const response = await fetch(PREVIOUS_DATA_FILE_URL, { method:"GET", cache:"no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        state.previousLastModified = response.headers.get("Last-Modified") || "";
+        const arrayBuffer = await response.arrayBuffer();
         state.previousRows = parseWorkbookArrayBuffer(arrayBuffer);
       } catch (error) {
-        const cached = readCache(PREVIOUS_DATA_FILE_URL);
-        if (cached) {
-          const arrayBuffer = new TextEncoder().encode(cached).buffer;
-          state.previousRows = parseWorkbookArrayBuffer(arrayBuffer);
-          state.previousLastModified = "";
-        } else {
-          state.previousRows = [];
-          state.previousLastModified = "";
-        }
+        state.previousRows = [];
+        state.previousLastModified = "";
       }
     }
 
@@ -2222,9 +2159,10 @@
       try {
         showLoading(true);
         setStatus("Last updated: loading…");
-        const { text, lastModified } = await fetchWithCache(DATA_FILE_URL);
-        state.currentLastModified = lastModified || "";
-        const arrayBuffer = new TextEncoder().encode(text).buffer;
+        const response = await fetch(DATA_FILE_URL, { method:"GET", cache:"no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        state.currentLastModified = response.headers.get("Last-Modified") || "";
+        const arrayBuffer = await response.arrayBuffer();
         const rows = parseWorkbookArrayBuffer(arrayBuffer);
         if (!rows.length) throw new Error("No usable rows found in data file.");
         state.rawRows = rows;
@@ -2240,17 +2178,8 @@
           setStatus("Last updated: unavailable");
         }
       } catch (error) {
-        const cached = readCache(DATA_FILE_URL);
-        if (cached) {
-          const arrayBuffer = new TextEncoder().encode(cached).buffer;
-          state.rawRows = parseWorkbookArrayBuffer(arrayBuffer);
-          await loadPreviousWorkbook();
-          refreshView();
-          setStatus("Last updated: loaded from browser cache");
-        } else {
-          console.error(error);
-          setStatus("Last updated: unavailable. Error loading DataTable.csv");
-        }
+        console.error(error);
+        setStatus("Last updated: unavailable. Error loading DataTable.csv");
       } finally {
         showLoading(false);
       }

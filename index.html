@@ -1533,7 +1533,7 @@
     }
 
     function updateFileStatus() {
-      document.getElementById("currentDataFileStatus").textContent = safeDateText(state.currentLastModified);
+      document.getElementById("currentDataFileStatus").textContent = state.currentLastModified ? safeDateText(state.currentLastModified) : "Loaded";
       document.getElementById("previousDataFileStatus").textContent = state.previousLastModified ? safeDateText(state.previousLastModified) : "Not loaded";
     }
 
@@ -1738,11 +1738,15 @@
     function refreshView() {
       hideRowPiePopup();
       updateHeaderText();
+      updateCurrentFilterSummary();
+      updateFileStatus();
       updateCards();
       updateStatewidePartySummaryTable();
       showStatewidePartyBreak();
 
       const allRows = getFilteredRows();
+      updateInsights(allRows);
+
       const chartRows = allRows.slice(0, state.limit);
       mainChart.data.labels = chartRows.map(r => r.label);
 
@@ -1757,6 +1761,13 @@
       mainChart.options.scales.x.stacked = state.mode === "stacked";
       mainChart.options.scales.y.stacked = state.mode === "stacked";
       mainChart.update();
+
+      const comparisonFoot = document.getElementById("comparisonFoot");
+      if (comparisonFoot) {
+        comparisonFoot.textContent = allRows.length
+          ? "Chart respects the Top 10 / 25 / 50 / All setting. The detail table below always shows all matching rows."
+          : "No results for the current filters. Try changing geography, ballot view, party, or search.";
+      }
 
       renderTable(allRows);
 

@@ -709,6 +709,67 @@
       }
     }
 
+
+    .legend-row {
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:10px;
+      font-size:12px;
+      color:#555;
+    }
+    .legend-chip {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .legend-swatch {
+      width:16px;
+      height:10px;
+      border-radius:999px;
+      display:inline-block;
+      border:1px solid rgba(0,0,0,.08);
+    }
+    .download-btn {
+      border:1px solid var(--brand);
+      background:#fff;
+      color:var(--brand);
+      font-weight:700;
+      cursor:pointer;
+    }
+    .insight-sentence-card {
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      padding:16px 18px;
+      margin:0 0 18px 0;
+    }
+    .insight-sentence-title {
+      font-size:12px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin-bottom:8px;
+    }
+    .insight-sentence-text {
+      font-size:15px;
+      line-height:1.5;
+      color:var(--ink);
+      font-weight:600;
+    }
+    .priority-flag {
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      background:#fff4d6;
+      color:#8c6400;
+      margin-left:6px;
+    }
+
 </style>
 
 
@@ -788,6 +849,11 @@
         <div class="label">Top Daily Growth</div>
         <div class="value" id="insightTopGrowth" style="font-size:22px;">—</div>
       </div>
+    </section>
+
+    <section class="insight-sentence-card">
+      <div class="insight-sentence-title">Key Takeaway</div>
+      <div class="insight-sentence-text" id="insightSentence">Loading summary…</div>
     </section>
 
     <div id="loadingOverlay" style="position:fixed; inset:0; background:rgba(247,244,242,.82); display:none; align-items:center; justify-content:center; z-index:10000;">
@@ -954,6 +1020,11 @@
       </div>
       <div id="heatGridWrap" class="heat-grid-wrap" style="display:none;"></div>
       <div class="foot" id="heatMapStatus">County heat map loading… Click a county to filter the dashboard to that county. Click it again to clear.</div>
+      <div class="legend-row" id="heatLegendRow">
+        <span class="legend-chip"><span class="legend-swatch" style="background:#f5e8e5;"></span>Low</span>
+        <span class="legend-chip"><span class="legend-swatch" style="background:#cf8f7f;"></span>Medium</span>
+        <span class="legend-chip"><span class="legend-swatch" style="background:#8d0d0d;"></span>High</span>
+      </div>
     </section>
 
     <section class="card section">
@@ -999,6 +1070,7 @@
           <button id="stackedBtn" class="active" type="button">Stacked</button>
           <button id="groupedBtn" type="button">Grouped</button>
         </div>
+        <button id="downloadFilteredCsvBtn" class="download-btn" type="button">Download Filtered CSV</button>
         <button id="printReportBtn" type="button">Generate Client Report PDF</button>
       </div>
       <div class="chart-wrap" style="overflow-x:auto; overflow-y:hidden;">
@@ -1108,6 +1180,70 @@
       if (!value) return "Unavailable";
       const d = new Date(value);
       return Number.isNaN(d.getTime()) ? "Unavailable" : d.toLocaleString();
+    }
+
+
+    function exportFilteredCsv() {
+      const rows = getFilteredRows();
+      const lines = [["Label","Dem","Other","Rep","Total","AppliedTotal","ReturnedTotal","TotalReturnRate"]];
+      rows.forEach(r => {
+        lines.push([
+          r.label,
+          Number(r.D || 0),
+          Number(r.O || 0),
+          Number(r.R || 0),
+          Number(r.Total || 0),
+          Number(r.appliedTotal || 0),
+          Number(r.returnedTotal || 0),
+          Number(getTotalReturnRate(r).toFixed(1))
+        ]);
+      });
+      const csv = lines.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `tss_filtered_view_${state.dimension.toLowerCase()}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+
+    function updateHeatLegend() {
+      const row = document.getElementById("heatLegendRow");
+      const metric = document.getElementById("heatMetricSelect")?.value || "applied_total";
+      if (!row) return;
+      if (metric === "return_rate") {
+        row.innerHTML = `
+          <span class="legend-chip"><span class="legend-swatch" style="background:#f5b6ad;"></span>Low rate</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#f3e7a6;"></span>Mid rate</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#bfe3bf;"></span>High rate</span>`;
+      } else {
+        row.innerHTML = `
+          <span class="legend-chip"><span class="legend-swatch" style="background:#f5e8e5;"></span>Low</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#cf8f7f;"></span>Medium</span>
+          <span class="legend-chip"><span class="legend-swatch" style="background:#8d0d0d;"></span>High</span>`;
+      }
+    }
+
+    function updateInsightSentence(rows) {
+      const el = document.getElementById("insightSentence");
+      if (!el) return;
+      const visibleRows = rows && rows.length ? rows : getFilteredRows();
+      if (!visibleRows.length) {
+        el.textContent = "No results for the current filters. Try changing geography, ballot view, party, or search.";
+        return;
+      }
+      const highestVolume = [...visibleRows].sort((a,b) => Number(b.appliedTotal || b.Total || 0) - Number(a.appliedTotal || a.Total || 0))[0];
+      const bestRateRows = visibleRows.filter(r => Number(r.appliedTotal || 0) > 0);
+      const bestRate = bestRateRows.length ? [...bestRateRows].sort((a,b) => getTotalReturnRate(b) - getTotalReturnRate(a))[0] : null;
+      const growthMap = state.previousRows && state.previousRows.length ? computeGeographyGrowthMap(state.dimension) : null;
+      let growthText = "Daily growth will appear after a previous-day CSV is uploaded.";
+      if (growthMap) {
+        const ranked = [...visibleRows].map(r => ({ label: r.label, delta: Number(growthMap.get(r.label)?.appliedDelta || 0) }))
+          .sort((a,b) => b.delta - a.delta);
+        const top = ranked.find(r => r.delta > 0);
+        if (top) growthText = `${top.label} shows the fastest daily growth at +${formatNum(top.delta)}.`;
+      }
+      el.textContent = `${highestVolume.label} leads this view with ${formatNum(highestVolume.appliedTotal || highestVolume.Total || 0)} applied voters. ${bestRate ? `${bestRate.label} has the strongest return rate at ${getTotalReturnRate(bestRate).toFixed(1)}%.` : ``} ${growthText}`;
     }
 
     function setStatus(message) {
@@ -2058,6 +2194,8 @@
 
       const allRows = getFilteredRows();
       updateInsights(allRows);
+      updateInsightSentence(allRows);
+      updateHeatLegend();
       updatePrintReportMeta(allRows);
 
       const chartRows = allRows.slice(0, state.limit);
@@ -2186,8 +2324,9 @@
       state.detailTableMode = "returned";
       refreshView();
     });
+    document.getElementById("downloadFilteredCsvBtn").addEventListener("click", exportFilteredCsv);
     document.getElementById("printReportBtn").addEventListener("click", () => window.print());
-    document.getElementById("heatMetricSelect").addEventListener("change", () => renderHeatMap());
+    document.getElementById("heatMetricSelect").addEventListener("change", () => { updateHeatLegend(); renderHeatMap(); });
 
     async function loadPreviousWorkbook() {
       try {

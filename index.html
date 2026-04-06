@@ -177,7 +177,7 @@
     table {
       font-size: 13px;
       width:100%;
-      min-width:760px;
+      min-width:1700px;
       border-collapse:collapse;
       background:#fff;
     }
@@ -1105,7 +1105,7 @@
 
     <section class="card section">
       <h2 id="tableTitle">County Detail Table</h2>
-      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
+      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including both applied and returned ballot data by party.</p>
       <div id="detailBenchmarkNote" class="benchmark-note" style="margin-bottom:10px;"></div>
       <div class="toolbar" style="margin-top:4px;" style="margin-top:-4px; margin-bottom:14px;">
         <div class="toggle-group">
@@ -1118,14 +1118,21 @@
           <thead>
             <tr>
               <th id="firstColHeader" data-sort-key="label">County</th>
-              <th class="num" id="detailColDem" data-sort-key="dem_count">Democrats</th>
-              <th class="num" data-sort-key="dem_rate">Dem %</th>
-              <th class="num" id="detailColOther" data-sort-key="other_count">Other</th>
-              <th class="num" data-sort-key="other_rate">Other %</th>
-              <th class="num" id="detailColRep" data-sort-key="rep_count">Republicans</th>
-              <th class="num" data-sort-key="rep_rate">Rep %</th>
-              <th class="num" id="detailColTotal" data-sort-key="total_count">Total</th>
-              <th class="num" id="detailColTotalRate" data-sort-key="total_rate">Total %</th>
+              <th class="num" id="detailColDemApplied" data-sort-key="applied_dem_count">Dem Applied</th>
+              <th class="num" data-sort-key="applied_dem_rate">Dem %</th>
+              <th class="num" id="detailColOtherApplied" data-sort-key="applied_other_count">Other Applied</th>
+              <th class="num" data-sort-key="applied_other_rate">Other %</th>
+              <th class="num" id="detailColRepApplied" data-sort-key="applied_rep_count">Rep Applied</th>
+              <th class="num" data-sort-key="applied_rep_rate">Rep %</th>
+              <th class="num" id="detailColTotalApplied" data-sort-key="applied_total_count">Total Applied</th>
+              <th class="num" id="detailColDemReturned" data-sort-key="returned_dem_count">Dem Returned</th>
+              <th class="num" data-sort-key="returned_dem_rate">Dem Return Rate</th>
+              <th class="num" id="detailColOtherReturned" data-sort-key="returned_other_count">Other Returned</th>
+              <th class="num" data-sort-key="returned_other_rate">Other Return Rate</th>
+              <th class="num" id="detailColRepReturned" data-sort-key="returned_rep_count">Rep Returned</th>
+              <th class="num" data-sort-key="returned_rep_rate">Rep Return Rate</th>
+              <th class="num" id="detailColTotalReturned" data-sort-key="returned_total_count">Total Returned</th>
+              <th class="num" id="detailColTotalReturnRate" data-sort-key="returned_total_rate">Total Return Rate</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -2131,46 +2138,43 @@
       let av = 0;
       let bv = 0;
 
-      if (key === "dem_count") {
-        av = state.detailTableMode === "returned" ? Number(a.returnedD || 0) : Number(a.appliedD || 0);
-        bv = state.detailTableMode === "returned" ? Number(b.returnedD || 0) : Number(b.appliedD || 0);
-      } else if (key === "dem_rate") {
-        av = state.detailTableMode === "returned"
-          ? (Number(a.appliedD || 0) ? (Number(a.returnedD || 0) / Number(a.appliedD || 0)) * 100 : 0)
-          : (Number(a.appliedTotal || 0) ? (Number(a.appliedD || 0) / Number(a.appliedTotal || 0)) * 100 : 0);
-        bv = state.detailTableMode === "returned"
-          ? (Number(b.appliedD || 0) ? (Number(b.returnedD || 0) / Number(b.appliedD || 0)) * 100 : 0)
-          : (Number(b.appliedTotal || 0) ? (Number(b.appliedD || 0) / Number(b.appliedTotal || 0)) * 100 : 0);
-      } else if (key === "other_count") {
-        av = state.detailTableMode === "returned" ? Number(a.returnedO || 0) : Number(a.appliedO || 0);
-        bv = state.detailTableMode === "returned" ? Number(b.returnedO || 0) : Number(b.appliedO || 0);
-      } else if (key === "other_rate") {
-        av = state.detailTableMode === "returned"
-          ? (Number(a.appliedO || 0) ? (Number(a.returnedO || 0) / Number(a.appliedO || 0)) * 100 : 0)
-          : (Number(a.appliedTotal || 0) ? (Number(a.appliedO || 0) / Number(a.appliedTotal || 0)) * 100 : 0);
-        bv = state.detailTableMode === "returned"
-          ? (Number(b.appliedO || 0) ? (Number(b.returnedO || 0) / Number(b.appliedO || 0)) * 100 : 0)
-          : (Number(b.appliedTotal || 0) ? (Number(b.appliedO || 0) / Number(b.appliedTotal || 0)) * 100 : 0);
-      } else if (key === "rep_count") {
-        av = state.detailTableMode === "returned" ? Number(a.returnedR || 0) : Number(a.appliedR || 0);
-        bv = state.detailTableMode === "returned" ? Number(b.returnedR || 0) : Number(b.appliedR || 0);
-      } else if (key === "rep_rate") {
-        av = state.detailTableMode === "returned"
-          ? (Number(a.appliedR || 0) ? (Number(a.returnedR || 0) / Number(a.appliedR || 0)) * 100 : 0)
-          : (Number(a.appliedTotal || 0) ? (Number(a.appliedR || 0) / Number(a.appliedTotal || 0)) * 100 : 0);
-        bv = state.detailTableMode === "returned"
-          ? (Number(b.appliedR || 0) ? (Number(b.returnedR || 0) / Number(b.appliedR || 0)) * 100 : 0)
-          : (Number(b.appliedTotal || 0) ? (Number(b.appliedR || 0) / Number(b.appliedTotal || 0)) * 100 : 0);
-      } else if (key === "total_count") {
-        av = state.detailTableMode === "returned" ? Number(a.returnedTotal || 0) : Number(a.appliedTotal || 0);
-        bv = state.detailTableMode === "returned" ? Number(b.returnedTotal || 0) : Number(b.appliedTotal || 0);
-      } else if (key === "total_rate") {
-        av = state.detailTableMode === "returned"
-          ? getTotalReturnRate(a)
-          : 100;
-        bv = state.detailTableMode === "returned"
-          ? getTotalReturnRate(b)
-          : 100;
+      if (key === "applied_dem_count") {
+        av = Number(a.appliedD || 0); bv = Number(b.appliedD || 0);
+      } else if (key === "applied_dem_rate") {
+        av = Number(a.appliedTotal || 0) ? (Number(a.appliedD || 0) / Number(a.appliedTotal || 0)) * 100 : 0;
+        bv = Number(b.appliedTotal || 0) ? (Number(b.appliedD || 0) / Number(b.appliedTotal || 0)) * 100 : 0;
+      } else if (key === "applied_other_count") {
+        av = Number(a.appliedO || 0); bv = Number(b.appliedO || 0);
+      } else if (key === "applied_other_rate") {
+        av = Number(a.appliedTotal || 0) ? (Number(a.appliedO || 0) / Number(a.appliedTotal || 0)) * 100 : 0;
+        bv = Number(b.appliedTotal || 0) ? (Number(b.appliedO || 0) / Number(b.appliedTotal || 0)) * 100 : 0;
+      } else if (key === "applied_rep_count") {
+        av = Number(a.appliedR || 0); bv = Number(b.appliedR || 0);
+      } else if (key === "applied_rep_rate") {
+        av = Number(a.appliedTotal || 0) ? (Number(a.appliedR || 0) / Number(a.appliedTotal || 0)) * 100 : 0;
+        bv = Number(b.appliedTotal || 0) ? (Number(b.appliedR || 0) / Number(b.appliedTotal || 0)) * 100 : 0;
+      } else if (key === "applied_total_count") {
+        av = Number(a.appliedTotal || 0); bv = Number(b.appliedTotal || 0);
+      } else if (key === "returned_dem_count") {
+        av = Number(a.returnedD || 0); bv = Number(b.returnedD || 0);
+      } else if (key === "returned_dem_rate") {
+        av = Number(a.appliedD || 0) ? (Number(a.returnedD || 0) / Number(a.appliedD || 0)) * 100 : 0;
+        bv = Number(b.appliedD || 0) ? (Number(b.returnedD || 0) / Number(b.appliedD || 0)) * 100 : 0;
+      } else if (key === "returned_other_count") {
+        av = Number(a.returnedO || 0); bv = Number(b.returnedO || 0);
+      } else if (key === "returned_other_rate") {
+        av = Number(a.appliedO || 0) ? (Number(a.returnedO || 0) / Number(a.appliedO || 0)) * 100 : 0;
+        bv = Number(b.appliedO || 0) ? (Number(b.returnedO || 0) / Number(b.appliedO || 0)) * 100 : 0;
+      } else if (key === "returned_rep_count") {
+        av = Number(a.returnedR || 0); bv = Number(b.returnedR || 0);
+      } else if (key === "returned_rep_rate") {
+        av = Number(a.appliedR || 0) ? (Number(a.returnedR || 0) / Number(a.appliedR || 0)) * 100 : 0;
+        bv = Number(b.appliedR || 0) ? (Number(b.returnedR || 0) / Number(b.appliedR || 0)) * 100 : 0;
+      } else if (key === "returned_total_count") {
+        av = Number(a.returnedTotal || 0); bv = Number(b.returnedTotal || 0);
+      } else if (key === "returned_total_rate") {
+        av = Number(a.appliedTotal || 0) ? (Number(a.returnedTotal || 0) / Number(a.appliedTotal || 0)) * 100 : 0;
+        bv = Number(b.appliedTotal || 0) ? (Number(b.returnedTotal || 0) / Number(b.appliedTotal || 0)) * 100 : 0;
       }
 
       if (av === bv) return geoFallback();
@@ -2442,14 +2446,6 @@
       state.mode = "grouped";
       document.getElementById("groupedBtn").classList.add("active");
       document.getElementById("stackedBtn").classList.remove("active");
-      refreshView();
-    });
-    document.getElementById("detailAppliedBtn").addEventListener("click", () => {
-      state.detailTableMode = "applied";
-      refreshView();
-    });
-    document.getElementById("detailReturnedBtn").addEventListener("click", () => {
-      state.detailTableMode = "returned";
       refreshView();
     });
     document.getElementById("downloadFilteredCsvBtn").addEventListener("click", exportFilteredCsv);

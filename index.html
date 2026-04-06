@@ -247,12 +247,12 @@
     .row-pie-popup {
       position:fixed;
       z-index:9999;
-      width:220px;
+      width:210px;
       background:#fff;
       border:1px solid var(--line);
-      border-radius:16px;
-      box-shadow:0 14px 34px rgba(0,0,0,.14);
-      padding:12px;
+      border-radius:14px;
+      box-shadow:0 10px 24px rgba(0,0,0,.12);
+      padding:10px;
       pointer-events:none;
       display:none;
     }
@@ -1906,12 +1906,24 @@
     });
 
     function positionRowPiePopup(clientX, clientY) {
-      const popupWidth = 220, popupHeight = 195, margin = 4;
-      let left = clientX + margin, top = clientY - 20;
-      if (left + popupWidth > window.innerWidth - 8) left = clientX - popupWidth - margin;
-      if (top + popupHeight > window.innerHeight - 8) top = window.innerHeight - popupHeight - 8;
-      if (top < 8) top = 8;
-      if (left < 8) left = 8;
+      const popupWidth = 220, popupHeight = 195, margin = 2;
+      const bodyZoom = Number(getComputedStyle(document.body).zoom || 1) || 1;
+
+      // Compensate for CSS zoom so popup stays tight to the cursor in Wix embeds.
+      let adjX = clientX / bodyZoom;
+      let adjY = clientY / bodyZoom;
+
+      let left = adjX + margin;
+      let top = adjY + margin;
+
+      const viewportWidth = window.innerWidth / bodyZoom;
+      const viewportHeight = window.innerHeight / bodyZoom;
+
+      if (left + popupWidth > viewportWidth - 6) left = adjX - popupWidth - margin;
+      if (top + popupHeight > viewportHeight - 6) top = adjY - popupHeight - margin;
+      if (top < 6) top = 6;
+      if (left < 6) left = 6;
+
       rowPiePopup.style.left = `${left}px`;
       rowPiePopup.style.top = `${top}px`;
     }

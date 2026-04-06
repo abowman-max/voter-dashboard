@@ -770,6 +770,27 @@
       margin-left:6px;
     }
 
+
+    #detailTable thead th.sortable {
+      cursor:pointer;
+      user-select:none;
+      position:sticky;
+    }
+    #detailTable thead th.sortable::after {
+      content:"";
+      display:inline-block;
+      width:10px;
+      margin-left:6px;
+      color:#9b8d84;
+      font-size:11px;
+    }
+    #detailTable thead th.sort-asc::after {
+      content:"▲";
+    }
+    #detailTable thead th.sort-desc::after {
+      content:"▼";
+    }
+
 </style>
 
 
@@ -1096,15 +1117,15 @@
         <table id="detailTable">
           <thead>
             <tr>
-              <th id="firstColHeader">County</th>
-              <th class="num" id="detailColDem">Democrats</th>
-              <th class="num">Dem %</th>
-              <th class="num" id="detailColOther">Other</th>
-              <th class="num">Other %</th>
-              <th class="num" id="detailColRep">Republicans</th>
-              <th class="num">Rep %</th>
-              <th class="num" id="detailColTotal">Total</th>
-              <th class="num" id="detailColTotalRate">Total %</th>
+              <th id="firstColHeader" data-sort-key="label">County</th>
+              <th class="num" id="detailColDem" data-sort-key="dem_count">Democrats</th>
+              <th class="num" data-sort-key="dem_rate">Dem %</th>
+              <th class="num" id="detailColOther" data-sort-key="other_count">Other</th>
+              <th class="num" data-sort-key="other_rate">Other %</th>
+              <th class="num" id="detailColRep" data-sort-key="rep_count">Republicans</th>
+              <th class="num" data-sort-key="rep_rate">Rep %</th>
+              <th class="num" id="detailColTotal" data-sort-key="total_count">Total</th>
+              <th class="num" id="detailColTotalRate" data-sort-key="total_rate">Total %</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -1156,7 +1177,9 @@
         returnedByParty: { D:0, R:0, O:0 }
       },
       currentLastModified: "",
-      previousLastModified: ""
+      previousLastModified: "",
+      tableSortKey: "label",
+      tableSortDir: "asc"
     };
 
     let heatMapChart = null;
@@ -2096,8 +2119,100 @@
       document.getElementById("summaryRateTotal").textContent = rate(totalReturned, totalApplied);
     }
 
+
+    function compareTableRows(a, b, key, dir) {
+      const mult = dir === "desc" ? -1 : 1;
+      const geoFallback = () => compareGeoLabels(a, b, state.dimension, dir === "desc" ? "desc" : "asc");
+
+      if (key === "label") {
+        return compareGeoLabels(a, b, state.dimension, dir === "desc" ? "desc" : "asc");
+      }
+
+      let av = 0;
+      let bv = 0;
+
+      if (key === "dem_count") {
+        av = state.detailTableMode === "returned" ? Number(a.returnedD || 0) : Number(a.appliedD || 0);
+        bv = state.detailTableMode === "returned" ? Number(b.returnedD || 0) : Number(b.appliedD || 0);
+      } else if (key === "dem_rate") {
+        av = state.detailTableMode === "returned"
+          ? (Number(a.appliedD || 0) ? (Number(a.returnedD || 0) / Number(a.appliedD || 0)) * 100 : 0)
+          : (Number(a.appliedTotal || 0) ? (Number(a.appliedD || 0) / Number(a.appliedTotal || 0)) * 100 : 0);
+        bv = state.detailTableMode === "returned"
+          ? (Number(b.appliedD || 0) ? (Number(b.returnedD || 0) / Number(b.appliedD || 0)) * 100 : 0)
+          : (Number(b.appliedTotal || 0) ? (Number(b.appliedD || 0) / Number(b.appliedTotal || 0)) * 100 : 0);
+      } else if (key === "other_count") {
+        av = state.detailTableMode === "returned" ? Number(a.returnedO || 0) : Number(a.appliedO || 0);
+        bv = state.detailTableMode === "returned" ? Number(b.returnedO || 0) : Number(b.appliedO || 0);
+      } else if (key === "other_rate") {
+        av = state.detailTableMode === "returned"
+          ? (Number(a.appliedO || 0) ? (Number(a.returnedO || 0) / Number(a.appliedO || 0)) * 100 : 0)
+          : (Number(a.appliedTotal || 0) ? (Number(a.appliedO || 0) / Number(a.appliedTotal || 0)) * 100 : 0);
+        bv = state.detailTableMode === "returned"
+          ? (Number(b.appliedO || 0) ? (Number(b.returnedO || 0) / Number(b.appliedO || 0)) * 100 : 0)
+          : (Number(b.appliedTotal || 0) ? (Number(b.appliedO || 0) / Number(b.appliedTotal || 0)) * 100 : 0);
+      } else if (key === "rep_count") {
+        av = state.detailTableMode === "returned" ? Number(a.returnedR || 0) : Number(a.appliedR || 0);
+        bv = state.detailTableMode === "returned" ? Number(b.returnedR || 0) : Number(b.appliedR || 0);
+      } else if (key === "rep_rate") {
+        av = state.detailTableMode === "returned"
+          ? (Number(a.appliedR || 0) ? (Number(a.returnedR || 0) / Number(a.appliedR || 0)) * 100 : 0)
+          : (Number(a.appliedTotal || 0) ? (Number(a.appliedR || 0) / Number(a.appliedTotal || 0)) * 100 : 0);
+        bv = state.detailTableMode === "returned"
+          ? (Number(b.appliedR || 0) ? (Number(b.returnedR || 0) / Number(b.appliedR || 0)) * 100 : 0)
+          : (Number(b.appliedTotal || 0) ? (Number(b.appliedR || 0) / Number(b.appliedTotal || 0)) * 100 : 0);
+      } else if (key === "total_count") {
+        av = state.detailTableMode === "returned" ? Number(a.returnedTotal || 0) : Number(a.appliedTotal || 0);
+        bv = state.detailTableMode === "returned" ? Number(b.returnedTotal || 0) : Number(b.appliedTotal || 0);
+      } else if (key === "total_rate") {
+        av = state.detailTableMode === "returned"
+          ? getTotalReturnRate(a)
+          : 100;
+        bv = state.detailTableMode === "returned"
+          ? getTotalReturnRate(b)
+          : 100;
+      }
+
+      if (av === bv) return geoFallback();
+      return (av - bv) * mult;
+    }
+
+    function updateDetailHeaderSortIndicators() {
+      const headers = document.querySelectorAll("#detailTable thead th[data-sort-key]");
+      headers.forEach(th => {
+        th.classList.remove("sortable", "sort-asc", "sort-desc");
+        th.classList.add("sortable");
+        if (th.dataset.sortKey === state.tableSortKey) {
+          th.classList.add(state.tableSortDir === "desc" ? "sort-desc" : "sort-asc");
+        }
+      });
+    }
+
+    function attachSortableHeadersOnce() {
+      const headers = document.querySelectorAll("#detailTable thead th[data-sort-key]");
+      headers.forEach(th => {
+        if (th.dataset.boundClick === "1") return;
+        th.dataset.boundClick = "1";
+        th.classList.add("sortable");
+        th.addEventListener("click", () => {
+          const key = th.dataset.sortKey || "label";
+          if (state.tableSortKey === key) {
+            state.tableSortDir = state.tableSortDir === "asc" ? "desc" : "asc";
+          } else {
+            state.tableSortKey = key;
+            state.tableSortDir = key === "label" ? "asc" : "desc";
+          }
+          const allRows = getFilteredRows();
+          renderTable(allRows);
+        });
+      });
+      updateDetailHeaderSortIndicators();
+    }
+
     function renderTable(rows) {
       const tbody = document.querySelector("#detailTable tbody");
+      rows = [...rows].sort((a, b) => compareTableRows(a, b, state.tableSortKey, state.tableSortDir));
+      updateDetailHeaderSortIndicators();
 
       function rateClass(val) {
         const n = Number(val);
@@ -2383,33 +2498,8 @@
 
     loadHostedWorkbook();
   
-// ===== Column Sorting Enhancement =====
-function attachSortableHeaders() {
-  const headers = document.querySelectorAll("#detailTable thead th");
-  headers.forEach((th, idx) => {
-    th.style.cursor = "pointer";
-    th.addEventListener("click", () => {
-      const keyMap = [
-        "label","D","O","R","Total","appliedTotal","returnedTotal","returnRate"
-      ];
-      const key = keyMap[idx] || "label";
-      if (state.sort === key + "_asc") {
-        state.sort = key + "_desc";
-      } else {
-        state.sort = key + "_asc";
-      }
-      refreshView();
-    });
-  });
-}
 
-// Attach after table renders
-const originalRenderTable = renderTable;
-renderTable = function(rows) {
-  originalRenderTable(rows);
-  attachSortableHeaders();
-};
-
+    attachSortableHeadersOnce();
 </script>
 </body>
 </html>

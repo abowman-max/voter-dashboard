@@ -308,21 +308,7 @@
       .daily-layout { grid-template-columns:1fr; }
       .breakdown-grid { grid-template-columns:1fr; }
     }
-    
-    #detailTable thead th:first-child,
-    #detailTable tbody td:first-child {
-      position: sticky;
-      left: 0;
-      background: #fff;
-      z-index: 5;
-      border-right: 1px solid #e5ddd7;
-    }
-    #detailTable thead th:first-child {
-      background: var(--paper-soft);
-      z-index: 6;
-    }
-
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
     @media (max-width:760px) {
       .hero { grid-template-columns:1fr; }
@@ -803,6 +789,20 @@
     }
     #detailTable thead th.sort-desc::after {
       content:"▼";
+    }
+
+
+    #detailTable thead th:first-child,
+    #detailTable tbody td:first-child {
+      position: sticky;
+      left: 0;
+      background: #fff;
+      z-index: 5;
+      border-right: 1px solid #e5ddd7;
+    }
+    #detailTable thead th:first-child {
+      background: var(--paper-soft);
+      z-index: 6;
     }
 
 </style>

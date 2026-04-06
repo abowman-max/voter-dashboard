@@ -804,7 +804,6 @@
       background: var(--paper-soft);
       z-index: 6;
     }
-
 </style>
 
 
@@ -1119,7 +1118,7 @@
 
     <section class="card section">
       <h2 id="tableTitle">County Detail Table</h2>
-      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including both applied and returned ballot data by party.</p>
+      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
       <div id="detailBenchmarkNote" class="benchmark-note" style="margin-bottom:10px;"></div>
       <div class="table-wrap">
         <table id="detailTable">
@@ -2353,6 +2352,8 @@
           </tr>`;
       }).join("");
     }
+
+
 
     attachSortableHeadersOnce();
 </script>

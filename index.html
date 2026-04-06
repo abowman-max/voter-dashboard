@@ -898,6 +898,7 @@
         <div style="overflow:auto;">
           <table id="dailyPartyTable" style="min-width:420px;">
             <thead>
+        <tr id="sortableHeaderRow">
               <tr>
                 <th>Party</th>
                 <th class="num">Applied</th>
@@ -2381,6 +2382,34 @@
     }
 
     loadHostedWorkbook();
-  </script>
+  
+// ===== Column Sorting Enhancement =====
+function attachSortableHeaders() {
+  const headers = document.querySelectorAll("#detailTable thead th");
+  headers.forEach((th, idx) => {
+    th.style.cursor = "pointer";
+    th.addEventListener("click", () => {
+      const keyMap = [
+        "label","D","O","R","Total","appliedTotal","returnedTotal","returnRate"
+      ];
+      const key = keyMap[idx] || "label";
+      if (state.sort === key + "_asc") {
+        state.sort = key + "_desc";
+      } else {
+        state.sort = key + "_asc";
+      }
+      refreshView();
+    });
+  });
+}
+
+// Attach after table renders
+const originalRenderTable = renderTable;
+renderTable = function(rows) {
+  originalRenderTable(rows);
+  attachSortableHeaders();
+};
+
+</script>
 </body>
 </html>

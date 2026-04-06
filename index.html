@@ -177,7 +177,7 @@
     table {
       font-size: 13px;
       width:100%;
-      min-width:1700px;
+      min-width:1850px;
       border-collapse:collapse;
       background:#fff;
     }
@@ -791,6 +791,19 @@
       content:"▼";
     }
 
+
+    #detailTable thead th:first-child,
+    #detailTable tbody td:first-child {
+      position: sticky;
+      left: 0;
+      background: #fff;
+      z-index: 5;
+      border-right: 1px solid #e5ddd7;
+    }
+    #detailTable thead th:first-child {
+      background: var(--paper-soft);
+      z-index: 6;
+    }
 </style>
 
 
@@ -1105,7 +1118,7 @@
 
     <section class="card section">
       <h2 id="tableTitle">County Detail Table</h2>
-      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including both applied and returned ballot data by party.</p>
+      <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
       <div id="detailBenchmarkNote" class="benchmark-note" style="margin-bottom:10px;"></div>
       <div class="toolbar" style="margin-top:4px;" style="margin-top:-4px; margin-bottom:14px;">
         <div class="toggle-group">
@@ -1118,21 +1131,21 @@
           <thead>
             <tr>
               <th id="firstColHeader" data-sort-key="label">County</th>
-              <th class="num" id="detailColDemApplied" data-sort-key="applied_dem_count">Dem Applied</th>
+              <th class="num" data-sort-key="applied_dem_count">Dem Applied</th>
               <th class="num" data-sort-key="applied_dem_rate">Dem %</th>
-              <th class="num" id="detailColOtherApplied" data-sort-key="applied_other_count">Other Applied</th>
+              <th class="num" data-sort-key="applied_other_count">Other Applied</th>
               <th class="num" data-sort-key="applied_other_rate">Other %</th>
-              <th class="num" id="detailColRepApplied" data-sort-key="applied_rep_count">Rep Applied</th>
+              <th class="num" data-sort-key="applied_rep_count">Rep Applied</th>
               <th class="num" data-sort-key="applied_rep_rate">Rep %</th>
-              <th class="num" id="detailColTotalApplied" data-sort-key="applied_total_count">Total Applied</th>
-              <th class="num" id="detailColDemReturned" data-sort-key="returned_dem_count">Dem Returned</th>
+              <th class="num" data-sort-key="applied_total_count">Total Applied</th>
+              <th class="num" data-sort-key="returned_dem_count">Dem Returned</th>
               <th class="num" data-sort-key="returned_dem_rate">Dem Return Rate</th>
-              <th class="num" id="detailColOtherReturned" data-sort-key="returned_other_count">Other Returned</th>
+              <th class="num" data-sort-key="returned_other_count">Other Returned</th>
               <th class="num" data-sort-key="returned_other_rate">Other Return Rate</th>
-              <th class="num" id="detailColRepReturned" data-sort-key="returned_rep_count">Rep Returned</th>
+              <th class="num" data-sort-key="returned_rep_count">Rep Returned</th>
               <th class="num" data-sort-key="returned_rep_rate">Rep Return Rate</th>
-              <th class="num" id="detailColTotalReturned" data-sort-key="returned_total_count">Total Returned</th>
-              <th class="num" id="detailColTotalReturnRate" data-sort-key="returned_total_rate">Total Return Rate</th>
+              <th class="num" data-sort-key="returned_total_count">Total Returned</th>
+              <th class="num" data-sort-key="returned_total_rate">Total Return Rate</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -2069,250 +2082,16 @@
       document.getElementById("tableTitle").textContent = meta.title;
       const viewText = state.ballotView === "all" ? "all voters" : (state.ballotView === "returned" ? "returned ballots" : "applied ballots");
       const partyText = state.partyFilter === "ALL" ? "all parties" : (state.partyFilter === "D" ? "Democrats" : state.partyFilter === "R" ? "Republicans" : "Other");
-      const detailModeText = state.detailTableMode === "returned" ? "returned counts" : "applied counts";
-      document.getElementById("tableSubtitle").textContent = `Rows update automatically based on ${meta.label}, ${viewText}, ${partyText}, and currently show ${detailModeText}.`;
+      document.getElementById("tableSubtitle").textContent = `Rows update automatically based on ${meta.label}, ${viewText}, and ${partyText}, and show both applied and returned ballot data in one table.`;
       document.getElementById("searchBox").placeholder = meta.searchPlaceholder;
       document.getElementById("groupCountLabel").textContent = meta.groupLabel;
       document.getElementById("groupCountValue").textContent = formatNum(aggregateByDimension(state.rawRows, state.dimension).length);
-
-      document.getElementById("detailColDem").textContent = state.detailTableMode === "returned" ? "Dem Returned" : "Dem Applied";
-      document.querySelectorAll("#detailTable thead th")[2].textContent = state.detailTableMode === "returned" ? "Dem Return Rate" : "Dem %";
-      document.querySelectorAll("#detailTable thead th")[4].textContent = state.detailTableMode === "returned" ? "Other Return Rate" : "Other %";
-      document.querySelectorAll("#detailTable thead th")[6].textContent = state.detailTableMode === "returned" ? "Rep Return Rate" : "Rep %";
-      document.getElementById("detailColOther").textContent = state.detailTableMode === "returned" ? "Other Returned" : "Other Applied";
-      document.getElementById("detailColRep").textContent = state.detailTableMode === "returned" ? "Rep Returned" : "Rep Applied";
-      document.getElementById("detailColTotal").textContent = state.detailTableMode === "returned" ? "Total Returned" : "Total Applied";
-      document.getElementById("detailColTotalRate").textContent = state.detailTableMode === "returned" ? "Total Return Rate" : "Total %";
 
       const visibleRows = aggregateByDimension(state.rawRows, state.dimension);
       const appliedSum = visibleRows.reduce((sum, row) => sum + Number(row.appliedTotal || 0), 0);
       const returnedSum = visibleRows.reduce((sum, row) => sum + Number(row.returnedTotal || 0), 0);
       const benchmark = appliedSum ? ((returnedSum / appliedSum) * 100).toFixed(1) : "0.0";
-      document.getElementById("detailBenchmarkNote").textContent =
-        state.detailTableMode === "returned"
-          ? `Statewide benchmark return rate: ${benchmark}%. Top 5, bottom 5, and top daily growth areas are tagged below.`
-          : (state.dailyDelta && state.dailyDelta.hasPrevious
-              ? `Top 5, bottom 5, and top daily growth areas are tagged below using PreviousDataTable.csv as the prior day baseline.`
-              : ``);
-
-      document.getElementById("detailAppliedBtn").classList.toggle("active", state.detailTableMode === "applied");
-      document.getElementById("detailReturnedBtn").classList.toggle("active", state.detailTableMode === "returned");
-    }
-
-    function updateCards() {
-      const totals = computeVisibleTotals();
-      document.getElementById("demTotal").textContent = formatNum(totals.D);
-      document.getElementById("otherTotal").textContent = formatNum(totals.O);
-      document.getElementById("repTotal").textContent = formatNum(totals.R);
-      document.getElementById("grandTotal").textContent = formatNum(totals.Total);
-    }
-
-    function updateStatewidePartySummaryTable() {
-      const data = computeStatewideAppliedReturnedByParty();
-      const rate = (returned, applied) => applied ? ((returned / applied) * 100).toFixed(1) + "%" : "—";
-      document.getElementById("summaryAppliedD").textContent = formatNum(data.D.applied);
-      document.getElementById("summaryReturnedD").textContent = formatNum(data.D.returned);
-      document.getElementById("summaryRateD").textContent = rate(data.D.returned, data.D.applied);
-      document.getElementById("summaryAppliedR").textContent = formatNum(data.R.applied);
-      document.getElementById("summaryReturnedR").textContent = formatNum(data.R.returned);
-      document.getElementById("summaryRateR").textContent = rate(data.R.returned, data.R.applied);
-      document.getElementById("summaryAppliedO").textContent = formatNum(data.O.applied);
-      document.getElementById("summaryReturnedO").textContent = formatNum(data.O.returned);
-      document.getElementById("summaryRateO").textContent = rate(data.O.returned, data.O.applied);
-      const totalApplied = data.D.applied + data.R.applied + data.O.applied;
-      const totalReturned = data.D.returned + data.R.returned + data.O.returned;
-      document.getElementById("summaryAppliedTotal").textContent = formatNum(totalApplied);
-      document.getElementById("summaryReturnedTotal").textContent = formatNum(totalReturned);
-      document.getElementById("summaryRateTotal").textContent = rate(totalReturned, totalApplied);
-    }
-
-
-    function compareTableRows(a, b, key, dir) {
-      const mult = dir === "desc" ? -1 : 1;
-      const geoFallback = () => compareGeoLabels(a, b, state.dimension, dir === "desc" ? "desc" : "asc");
-
-      if (key === "label") {
-        return compareGeoLabels(a, b, state.dimension, dir === "desc" ? "desc" : "asc");
-      }
-
-      let av = 0;
-      let bv = 0;
-
-      if (key === "applied_dem_count") {
-        av = Number(a.appliedD || 0); bv = Number(b.appliedD || 0);
-      } else if (key === "applied_dem_rate") {
-        av = Number(a.appliedTotal || 0) ? (Number(a.appliedD || 0) / Number(a.appliedTotal || 0)) * 100 : 0;
-        bv = Number(b.appliedTotal || 0) ? (Number(b.appliedD || 0) / Number(b.appliedTotal || 0)) * 100 : 0;
-      } else if (key === "applied_other_count") {
-        av = Number(a.appliedO || 0); bv = Number(b.appliedO || 0);
-      } else if (key === "applied_other_rate") {
-        av = Number(a.appliedTotal || 0) ? (Number(a.appliedO || 0) / Number(a.appliedTotal || 0)) * 100 : 0;
-        bv = Number(b.appliedTotal || 0) ? (Number(b.appliedO || 0) / Number(b.appliedTotal || 0)) * 100 : 0;
-      } else if (key === "applied_rep_count") {
-        av = Number(a.appliedR || 0); bv = Number(b.appliedR || 0);
-      } else if (key === "applied_rep_rate") {
-        av = Number(a.appliedTotal || 0) ? (Number(a.appliedR || 0) / Number(a.appliedTotal || 0)) * 100 : 0;
-        bv = Number(b.appliedTotal || 0) ? (Number(b.appliedR || 0) / Number(b.appliedTotal || 0)) * 100 : 0;
-      } else if (key === "applied_total_count") {
-        av = Number(a.appliedTotal || 0); bv = Number(b.appliedTotal || 0);
-      } else if (key === "returned_dem_count") {
-        av = Number(a.returnedD || 0); bv = Number(b.returnedD || 0);
-      } else if (key === "returned_dem_rate") {
-        av = Number(a.appliedD || 0) ? (Number(a.returnedD || 0) / Number(a.appliedD || 0)) * 100 : 0;
-        bv = Number(b.appliedD || 0) ? (Number(b.returnedD || 0) / Number(b.appliedD || 0)) * 100 : 0;
-      } else if (key === "returned_other_count") {
-        av = Number(a.returnedO || 0); bv = Number(b.returnedO || 0);
-      } else if (key === "returned_other_rate") {
-        av = Number(a.appliedO || 0) ? (Number(a.returnedO || 0) / Number(a.appliedO || 0)) * 100 : 0;
-        bv = Number(b.appliedO || 0) ? (Number(b.returnedO || 0) / Number(b.appliedO || 0)) * 100 : 0;
-      } else if (key === "returned_rep_count") {
-        av = Number(a.returnedR || 0); bv = Number(b.returnedR || 0);
-      } else if (key === "returned_rep_rate") {
-        av = Number(a.appliedR || 0) ? (Number(a.returnedR || 0) / Number(a.appliedR || 0)) * 100 : 0;
-        bv = Number(b.appliedR || 0) ? (Number(b.returnedR || 0) / Number(b.appliedR || 0)) * 100 : 0;
-      } else if (key === "returned_total_count") {
-        av = Number(a.returnedTotal || 0); bv = Number(b.returnedTotal || 0);
-      } else if (key === "returned_total_rate") {
-        av = Number(a.appliedTotal || 0) ? (Number(a.returnedTotal || 0) / Number(a.appliedTotal || 0)) * 100 : 0;
-        bv = Number(b.appliedTotal || 0) ? (Number(b.returnedTotal || 0) / Number(b.appliedTotal || 0)) * 100 : 0;
-      }
-
-      if (av === bv) return geoFallback();
-      return (av - bv) * mult;
-    }
-
-    function updateDetailHeaderSortIndicators() {
-      const headers = document.querySelectorAll("#detailTable thead th[data-sort-key]");
-      headers.forEach(th => {
-        th.classList.remove("sortable", "sort-asc", "sort-desc");
-        th.classList.add("sortable");
-        if (th.dataset.sortKey === state.tableSortKey) {
-          th.classList.add(state.tableSortDir === "desc" ? "sort-desc" : "sort-asc");
-        }
-      });
-    }
-
-    function attachSortableHeadersOnce() {
-      const headers = document.querySelectorAll("#detailTable thead th[data-sort-key]");
-      headers.forEach(th => {
-        if (th.dataset.boundClick === "1") return;
-        th.dataset.boundClick = "1";
-        th.classList.add("sortable");
-        th.addEventListener("click", () => {
-          const key = th.dataset.sortKey || "label";
-          if (state.tableSortKey === key) {
-            state.tableSortDir = state.tableSortDir === "asc" ? "desc" : "asc";
-          } else {
-            state.tableSortKey = key;
-            state.tableSortDir = key === "label" ? "asc" : "desc";
-          }
-          const allRows = getFilteredRows();
-          renderTable(allRows);
-        });
-      });
-      updateDetailHeaderSortIndicators();
-    }
-
-    function renderTable(rows) {
-      const tbody = document.querySelector("#detailTable tbody");
-      rows = [...rows].sort((a, b) => compareTableRows(a, b, state.tableSortKey, state.tableSortDir));
-      updateDetailHeaderSortIndicators();
-
-      function rateClass(val) {
-        const n = Number(val);
-        if (n >= 70) return "rate-high";
-        if (n >= 40) return "rate-mid";
-        return "rate-low";
-      }
-
-      function getAppliedShare(row) {
-        return Number(row.appliedTotal || 0);
-      }
-
-      let topLabels = new Set();
-      let bottomLabels = new Set();
-      let growthLabels = new Set();
-
-      if (state.detailTableMode === "returned") {
-        const ranked = [...rows]
-          .filter(r => Number(r.appliedTotal || 0) > 0)
-          .sort((a,b) => getTotalReturnRate(b) - getTotalReturnRate(a));
-
-        ranked.slice(0, 5).forEach(r => topLabels.add(r.label));
-        [...ranked].reverse().slice(0, 5).forEach(r => bottomLabels.add(r.label));
-      } else {
-        const ranked = [...rows]
-          .sort((a,b) => getAppliedShare(b) - getAppliedShare(a));
-
-        ranked.slice(0, 5).forEach(r => topLabels.add(r.label));
-        [...ranked].reverse().slice(0, 5).forEach(r => bottomLabels.add(r.label));
-      }
-
-      if (state.previousRows && state.previousRows.length) {
-        const growthMap = computeGeographyGrowthMap(state.dimension);
-        const rankedGrowth = [...rows]
-          .map(r => ({
-            label: r.label,
-            delta: state.detailTableMode === "returned"
-              ? (growthMap.get(r.label)?.returnedDelta || 0)
-              : (growthMap.get(r.label)?.appliedDelta || 0)
-          }))
-          .sort((a,b) => b.delta - a.delta);
-
-        rankedGrowth
-          .filter(r => r.delta > 0)
-          .slice(0, 5)
-          .forEach(r => growthLabels.add(r.label));
-      }
-
-      if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="9" style="padding:18px 16px; color:#666;">No rows match the current filters.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = rows.map(r => {
-        const dVal = state.detailTableMode === "returned" ? (r.returnedD || 0) : (r.appliedD || 0);
-        const oVal = state.detailTableMode === "returned" ? (r.returnedO || 0) : (r.appliedO || 0);
-        const rVal = state.detailTableMode === "returned" ? (r.returnedR || 0) : (r.appliedR || 0);
-        const totalVal = state.detailTableMode === "returned" ? (r.returnedTotal || 0) : (r.appliedTotal || 0);
-
-        let demPct, otherPct, repPct, totalPct;
-
-        if (state.detailTableMode === "returned") {
-          demPct = r.appliedD ? ((r.returnedD / r.appliedD) * 100) : 0;
-          otherPct = r.appliedO ? ((r.returnedO / r.appliedO) * 100) : 0;
-          repPct = r.appliedR ? ((r.returnedR / r.appliedR) * 100) : 0;
-          totalPct = r.appliedTotal ? ((r.returnedTotal / r.appliedTotal) * 100) : 0;
-        } else {
-          demPct = totalVal ? ((dVal / totalVal) * 100) : 0;
-          otherPct = totalVal ? ((oVal / totalVal) * 100) : 0;
-          repPct = totalVal ? ((rVal / totalVal) * 100) : 0;
-          totalPct = 100;
-        }
-
-        let badge = "";
-        if (topLabels.has(r.label)) badge += '<span class="performer-badge performer-top">Top 5</span>';
-        else if (bottomLabels.has(r.label)) badge += '<span class="performer-badge performer-bottom">Bottom 5</span>';
-
-        if (growthLabels.has(r.label)) badge += '<span class="growth-badge">Top Daily Growth</span>';
-
-        return `
-          <tr class="detail-row"
-              data-label="${escapeAttr(r.label)}"
-              data-d="${dVal}"
-              data-o="${oVal}"
-              data-r="${rVal}"
-              data-total="${totalVal}">
-            <td>${r.label}${badge}</td>
-            <td class="num">${formatNum(dVal)}</td>
-            <td class="num ${state.detailTableMode === "returned" ? rateClass(demPct) : ""}">${demPct.toFixed(1)}%</td>
-            <td class="num">${formatNum(oVal)}</td>
-            <td class="num ${state.detailTableMode === "returned" ? rateClass(otherPct) : ""}">${otherPct.toFixed(1)}%</td>
-            <td class="num">${formatNum(rVal)}</td>
-            <td class="num ${state.detailTableMode === "returned" ? rateClass(repPct) : ""}">${repPct.toFixed(1)}%</td>
-            <td class="num total">${formatNum(totalVal)}</td>
-            <td class="num ${state.detailTableMode === "returned" ? rateClass(totalPct) : ""}">${totalPct.toFixed(1)}%</td>
-          </tr>`;
-      }).join("");
+      document.getElementById("detailBenchmarkNote").textContent = `Statewide benchmark return rate: ${benchmark}%. Top 5 and bottom 5 performers are tagged below.`;
     }
 
     function refreshView() {
@@ -2498,4 +2277,86 @@
     attachSortableHeadersOnce();
 </script>
 </body>
-</html>
+</html>function renderTable(rows) {
+      const tbody = document.querySelector("#detailTable tbody");
+      rows = [...rows].sort((a, b) => compareTableRows(a, b, state.tableSortKey, state.tableSortDir));
+      updateDetailHeaderSortIndicators();
+
+      function rateClass(val) {
+        const n = Number(val);
+        if (n >= 70) return "rate-high";
+        if (n >= 40) return "rate-mid";
+        return "rate-low";
+      }
+      const pct = (num, den) => den ? (num / den) * 100 : 0;
+
+      let topLabels = new Set();
+      let bottomLabels = new Set();
+      let growthLabels = new Set();
+
+      const ranked = [...rows]
+        .filter(r => Number(r.appliedTotal || 0) > 0)
+        .sort((a,b) => getTotalReturnRate(b) - getTotalReturnRate(a));
+      ranked.slice(0, 5).forEach(r => topLabels.add(r.label));
+      [...ranked].reverse().slice(0, 5).forEach(r => bottomLabels.add(r.label));
+
+      if (state.previousRows && state.previousRows.length) {
+        const growthMap = computeGeographyGrowthMap(state.dimension);
+        const rankedGrowth = [...rows]
+          .map(r => ({
+            label: r.label,
+            delta: Number(growthMap.get(r.label)?.appliedDelta || 0) + Number(growthMap.get(r.label)?.returnedDelta || 0)
+          }))
+          .sort((a,b) => b.delta - a.delta);
+        rankedGrowth.filter(r => r.delta > 0).slice(0, 5).forEach(r => growthLabels.add(r.label));
+      }
+
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="16" style="padding:18px 16px; color:#666;">No rows match the current filters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rows.map(r => {
+        const appliedDemPct = pct(Number(r.appliedD || 0), Number(r.appliedTotal || 0));
+        const appliedOtherPct = pct(Number(r.appliedO || 0), Number(r.appliedTotal || 0));
+        const appliedRepPct = pct(Number(r.appliedR || 0), Number(r.appliedTotal || 0));
+        const returnedDemRate = pct(Number(r.returnedD || 0), Number(r.appliedD || 0));
+        const returnedOtherRate = pct(Number(r.returnedO || 0), Number(r.appliedO || 0));
+        const returnedRepRate = pct(Number(r.returnedR || 0), Number(r.appliedR || 0));
+        const totalReturnRate = pct(Number(r.returnedTotal || 0), Number(r.appliedTotal || 0));
+        const isPriority = Number(r.appliedTotal || 0) >= 100 && totalReturnRate < 60;
+
+        let badge = "";
+        if (topLabels.has(r.label)) badge += '<span class="performer-badge performer-top">Top 5</span>';
+        else if (bottomLabels.has(r.label)) badge += '<span class="performer-badge performer-bottom">Bottom 5</span>';
+        if (growthLabels.has(r.label)) badge += '<span class="growth-badge">Top Daily Growth</span>';
+        if (isPriority) badge += '<span class="priority-flag">Priority</span>';
+
+        return `
+          <tr class="detail-row"
+              data-label="${escapeAttr(r.label)}"
+              data-d="${Number(r.appliedD || 0)}"
+              data-o="${Number(r.appliedO || 0)}"
+              data-r="${Number(r.appliedR || 0)}"
+              data-total="${Number(r.appliedTotal || 0)}">
+            <td>${r.label}${badge}</td>
+            <td class="num">${formatNum(r.appliedD || 0)}</td>
+            <td class="num">${appliedDemPct.toFixed(1)}%</td>
+            <td class="num">${formatNum(r.appliedO || 0)}</td>
+            <td class="num">${appliedOtherPct.toFixed(1)}%</td>
+            <td class="num">${formatNum(r.appliedR || 0)}</td>
+            <td class="num">${appliedRepPct.toFixed(1)}%</td>
+            <td class="num total">${formatNum(r.appliedTotal || 0)}</td>
+            <td class="num">${formatNum(r.returnedD || 0)}</td>
+            <td class="num ${rateClass(returnedDemRate)}">${returnedDemRate.toFixed(1)}%</td>
+            <td class="num">${formatNum(r.returnedO || 0)}</td>
+            <td class="num ${rateClass(returnedOtherRate)}">${returnedOtherRate.toFixed(1)}%</td>
+            <td class="num">${formatNum(r.returnedR || 0)}</td>
+            <td class="num ${rateClass(returnedRepRate)}">${returnedRepRate.toFixed(1)}%</td>
+            <td class="num total">${formatNum(r.returnedTotal || 0)}</td>
+            <td class="num ${rateClass(totalReturnRate)}">${totalReturnRate.toFixed(1)}%</td>
+          </tr>`;
+      }).join("");
+    }
+
+

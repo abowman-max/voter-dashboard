@@ -308,7 +308,21 @@
       .daily-layout { grid-template-columns:1fr; }
       .breakdown-grid { grid-template-columns:1fr; }
     }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    #detailTable thead th:first-child,
+    #detailTable tbody td:first-child {
+      position: sticky;
+      left: 0;
+      background: #fff;
+      z-index: 5;
+      border-right: 1px solid #e5ddd7;
+    }
+    #detailTable thead th:first-child {
+      background: var(--paper-soft);
+      z-index: 6;
+    }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
     @media (max-width:760px) {
       .hero { grid-template-columns:1fr; }
@@ -791,19 +805,6 @@
       content:"▼";
     }
 
-
-    #detailTable thead th:first-child,
-    #detailTable tbody td:first-child {
-      position: sticky;
-      left: 0;
-      background: #fff;
-      z-index: 5;
-      border-right: 1px solid #e5ddd7;
-    }
-    #detailTable thead th:first-child {
-      background: var(--paper-soft);
-      z-index: 6;
-    }
 </style>
 
 
@@ -1120,12 +1121,6 @@
       <h2 id="tableTitle">County Detail Table</h2>
       <p id="tableSubtitle">Rows update automatically based on the selected geography and always show the full filtered list, including party percentages.</p>
       <div id="detailBenchmarkNote" class="benchmark-note" style="margin-bottom:10px;"></div>
-      <div class="toolbar" style="margin-top:4px;" style="margin-top:-4px; margin-bottom:14px;">
-        <div class="toggle-group">
-          <button id="detailAppliedBtn" class="active" type="button">Applied View</button>
-          <button id="detailReturnedBtn" type="button">Returned View</button>
-        </div>
-      </div>
       <div class="table-wrap">
         <table id="detailTable">
           <thead>
@@ -2277,7 +2272,7 @@
     attachSortableHeadersOnce();
 </script>
 </body>
-</html>function renderTable(rows) {
+</html>    function renderTable(rows) {
       const tbody = document.querySelector("#detailTable tbody");
       rows = [...rows].sort((a, b) => compareTableRows(a, b, state.tableSortKey, state.tableSortDir));
       updateDetailHeaderSortIndicators();

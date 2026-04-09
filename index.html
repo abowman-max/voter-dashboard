@@ -1046,7 +1046,14 @@
 
     <section class="card section" id="mailingStatusSection">
       <h2>Ballot Mailing Status</h2>
-      <p>This section uses the daily <strong>MailingStatus.csv</strong> file to show where ballots have been mailed, what remains outstanding, and which geographies are complete or still in progress. It follows your current geography selection and search filter without changing any of the existing dashboard views.</p>
+      <div class="toolbar" style="margin-bottom:18px;">
+        <select id="mailingDimensionSelect">
+          <option value="County" selected>Mailing view: County</option>
+          <option value="USC">Mailing view: Congressional District</option>
+          <option value="STS">Mailing view: State Senate District</option>
+          <option value="STH">Mailing view: State House District</option>
+        </select>
+      </div>
 
       <section class="mailing-stats">
         <div class="card stat">
@@ -1271,6 +1278,7 @@
       previousLastModified: "",
       mailingRows: [],
       mailingLastModified: "",
+      mailingDimension: "County",
       tableSortKey: "label",
       tableSortDir: "asc"
     };
@@ -1488,9 +1496,10 @@
             topCount = count;
           }
         });
-        if (item.notMailed === 0 && item.mailed > 0) topStatus = "Complete";
+        if (mailedRate < 2) topStatus = "Not started";
+        else if (item.notMailed === 0 && item.mailed > 0) topStatus = "Complete";
         else if (item.mailed === 0 && item.notMailed > 0) topStatus = "Not started";
-        else if (item.mailed > 0 && item.notMailed > 0 && topStatus === "Unknown") topStatus = "In progress";
+        else if (item.mailed > 0 && item.notMailed > 0) topStatus = "In progress";
         return {
           label: item.label,
           mailed: item.mailed,
@@ -1503,10 +1512,11 @@
     }
 
     function getFilteredMailingRows() {
-      let rows = aggregateMailingByDimension(state.mailingRows || [], state.dimension);
+      const mailingDimension = state.mailingDimension || "County";
+      let rows = aggregateMailingByDimension(state.mailingRows || [], mailingDimension);
       const search = (state.search || "").toLowerCase();
       if (search) rows = rows.filter(r => String(r.label || "").toLowerCase().includes(search));
-      rows.sort((a, b) => b.mailed - a.mailed || compareGeoLabels(a, b, state.dimension, "asc"));
+      rows.sort((a, b) => b.mailed - a.mailed || compareGeoLabels(a, b, mailingDimension, "asc"));
       return rows;
     }
 
@@ -2538,8 +2548,10 @@
       const firstColEl = document.getElementById("mailingFirstColHeader");
       const tbody = document.querySelector("#mailingStatusTable tbody");
 
-      if (labelEl) labelEl.textContent = dimensionMeta[state.dimension]?.groupLabel || "Areas Reporting";
-      if (firstColEl) firstColEl.textContent = dimensionMeta[state.dimension]?.label || "Area";
+      const mailingDimension = state.mailingDimension || "County";
+
+      if (labelEl) labelEl.textContent = dimensionMeta[mailingDimension]?.groupLabel || "Areas Reporting";
+      if (firstColEl) firstColEl.textContent = dimensionMeta[mailingDimension]?.label || "Area";
 
       if (!state.mailingRows.length) {
         if (valueEl) valueEl.textContent = "—";
@@ -2559,7 +2571,7 @@
       const notMailedTotal = rows.reduce((sum, row) => sum + Number(row.notMailed || 0), 0);
       const total = mailedTotal + notMailedTotal;
       const mailedRate = total ? ((mailedTotal / total) * 100).toFixed(1) + "%" : "0.0%";
-      const completeCount = rows.filter(row => row.notMailed === 0 && row.mailed > 0).length;
+      const completeCount = rows.filter(row => row.status === "Complete").length;
 
       if (valueEl) valueEl.textContent = formatNum(rows.length);
       if (mailedEl) mailedEl.textContent = formatNum(mailedTotal);
@@ -2586,7 +2598,7 @@
       if (footEl) {
         const modifiedText = state.mailingLastModified ? ` Last updated: ${safeDateText(state.mailingLastModified)}.` : "";
         footEl.textContent = rows.length
-          ? `${formatNum(completeCount)} ${dimensionMeta[state.dimension]?.groupLabel?.toLowerCase() || "areas"} are fully mailed in the current view.${modifiedText}`
+          ? `${formatNum(completeCount)} ${dimensionMeta[mailingDimension]?.groupLabel?.toLowerCase() || "areas"} are fully mailed in the current view.${modifiedText}`
           : `No mailing rows match the current view.${modifiedText}`;
       }
     }

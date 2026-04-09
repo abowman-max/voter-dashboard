@@ -2748,6 +2748,10 @@
     document.getElementById("downloadFilteredCsvBtn").addEventListener("click", exportFilteredCsv);
     document.getElementById("printReportBtn").addEventListener("click", () => window.print());
     document.getElementById("heatMetricSelect").addEventListener("change", () => { updateHeatLegend(); renderHeatMap(); });
+    document.getElementById("mailingDimensionSelect").addEventListener("change", (e) => {
+      state.mailingDimension = e.target.value;
+      updateMailingStatusSection();
+    });
 
     async function loadPreviousWorkbook() {
       try {

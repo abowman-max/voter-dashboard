@@ -791,6 +791,49 @@
       content:"▼";
     }
 
+
+    .mailing-stats {
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:18px;
+      margin:0 0 18px 0;
+    }
+    .mailing-layout {
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:18px;
+      align-items:start;
+    }
+    .mailing-table-wrap {
+      width:100%;
+      max-height:420px;
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:#fff;
+    }
+    .status-pill {
+      display:inline-flex;
+      align-items:center;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .status-pill.status-complete { background:#e6f4ea; color:#1f6f3d; }
+    .status-pill.status-progress { background:#fff7e6; color:#8c6400; }
+    .status-pill.status-not-started { background:#fdecea; color:#a33a2f; }
+    .status-pill.status-unknown { background:#f0ece9; color:#6a625d; }
+
+    @media (max-width:1080px) {
+      .mailing-stats { grid-template-columns:repeat(2, 1fr); }
+      .mailing-layout { grid-template-columns:1fr; }
+    }
+    @media (max-width:760px) {
+      .mailing-stats { grid-template-columns:1fr; }
+    }
+
 </style>
 
 
@@ -1001,6 +1044,53 @@
       </div>
     </section>
 
+    <section class="card section" id="mailingStatusSection">
+      <h2>Ballot Mailing Status</h2>
+      <p>This section uses the daily <strong>MailingStatus.csv</strong> file to show where ballots have been mailed, what remains outstanding, and which geographies are complete or still in progress. It follows your current geography selection and search filter without changing any of the existing dashboard views.</p>
+
+      <section class="mailing-stats">
+        <div class="card stat">
+          <div class="label" id="mailingAreasLabel">Areas Reporting</div>
+          <div class="value" id="mailingAreasValue">—</div>
+        </div>
+        <div class="card stat">
+          <div class="label">Ballots Mailed</div>
+          <div class="value" id="mailingMailedTotal">—</div>
+        </div>
+        <div class="card stat">
+          <div class="label">Not Yet Mailed</div>
+          <div class="value" id="mailingNotMailedTotal">—</div>
+        </div>
+        <div class="card stat">
+          <div class="label">Mailed Rate</div>
+          <div class="value" id="mailingMailedRate">—</div>
+        </div>
+      </section>
+
+      <div class="mailing-layout">
+        <div>
+          <div class="mini-chart" style="height:300px;">
+            <canvas id="mailingStatusChart"></canvas>
+          </div>
+        </div>
+        <div class="mailing-table-wrap">
+          <table id="mailingStatusTable" style="min-width:520px;">
+            <thead>
+              <tr>
+                <th id="mailingFirstColHeader">County</th>
+                <th class="num">Mailed</th>
+                <th class="num">Not Mailed</th>
+                <th class="num">Mailed %</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="foot" id="mailingStatusFoot">Mailing status loading…</div>
+    </section>
+
     <section class="card section">
       <h2 style="font-size:18px;">Statewide Breakdown by Party, Gender and Age</h2>
       <p>Compact statewide views for party, gender, and age. Hover over any row in the data table to see a quick party popup for that geography.</p>
@@ -1145,6 +1235,7 @@
   <script>
     const DATA_FILE_URL = "./DataTable.csv";
     const PREVIOUS_DATA_FILE_URL = "./PreviousDataTable.csv";
+    const MAILING_STATUS_FILE_URL = "./MailingStatus.csv";
     const PA_COUNTY_GEOJSON_URL = "https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json";
     const PA_CONGRESSIONAL_GEOJSON_URL = "./usc.geojson";
     const PA_HOUSE_GEOJSON_URL = "./sth.geojson";
@@ -1178,6 +1269,8 @@
       },
       currentLastModified: "",
       previousLastModified: "",
+      mailingRows: [],
+      mailingLastModified: "",
       tableSortKey: "label",
       tableSortDir: "asc"
     };
@@ -1316,6 +1409,105 @@
         console.warn("CSV parse warnings:", parsed.errors);
       }
       return hydrateRows(Array.isArray(parsed.data) ? parsed.data : []);
+    }
+
+    function hydrateMailingRows(rows) {
+      return rows
+        .map(r => ({
+          County: String(r["County"] ?? "").trim(),
+          Municipality: String(r["Municipality"] ?? "").trim(),
+          USC: normalizeLabel(r["USC"]),
+          STS: normalizeLabel(r["STS"]),
+          STH: normalizeLabel(r["STH"]),
+          Mailed: Number(r["Mailed"] ?? 0) || 0,
+          NotMailed: Number(r["Not Mailed"] ?? 0) || 0,
+          MailingStatus: String(r["Mailing Status"] ?? "").trim()
+        }))
+        .filter(r => (r.County || r.USC || r.STS || r.STH || r.Municipality) && (r.Mailed > 0 || r.NotMailed > 0 || r.MailingStatus));
+    }
+
+    function parseMailingArrayBuffer(arrayBuffer) {
+      const text = new TextDecoder("utf-8").decode(arrayBuffer);
+      const parsed = Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: false
+      });
+      if (parsed.errors && parsed.errors.length) {
+        console.warn("Mailing CSV parse warnings:", parsed.errors);
+      }
+      return hydrateMailingRows(Array.isArray(parsed.data) ? parsed.data : []);
+    }
+
+    function normalizeStatusLabel(value) {
+      const raw = String(value || "").trim().toLowerCase();
+      if (!raw) return "Unknown";
+      if (raw.includes("complete") || raw.includes("completed") || raw.includes("fully mailed") || raw === "mailed") return "Complete";
+      if (raw.includes("progress") || raw.includes("partial") || raw.includes("mailing")) return "In progress";
+      if (raw.includes("not") || raw.includes("pending") || raw.includes("hold")) return "Not started";
+      return String(value || "Unknown").trim();
+    }
+
+    function mailingStatusClass(value) {
+      const normalized = normalizeStatusLabel(value).toLowerCase();
+      if (normalized === "complete") return "status-complete";
+      if (normalized === "in progress") return "status-progress";
+      if (normalized === "not started") return "status-not-started";
+      return "status-unknown";
+    }
+
+    function aggregateMailingByDimension(rows, dimension) {
+      const map = new Map();
+      rows.forEach(r => {
+        const key = normalizeLabel(r[dimension]);
+        if (!key) return;
+        if (!map.has(key)) {
+          map.set(key, {
+            label: key,
+            mailed: 0,
+            notMailed: 0,
+            total: 0,
+            statuses: new Map()
+          });
+        }
+        const item = map.get(key);
+        item.mailed += Number(r.Mailed || 0);
+        item.notMailed += Number(r.NotMailed || 0);
+        item.total += Number(r.Mailed || 0) + Number(r.NotMailed || 0);
+        const normalizedStatus = normalizeStatusLabel(r.MailingStatus);
+        item.statuses.set(normalizedStatus, (item.statuses.get(normalizedStatus) || 0) + 1);
+      });
+
+      return Array.from(map.values()).map(item => {
+        const mailedRate = item.total ? (item.mailed / item.total) * 100 : 0;
+        let topStatus = "Unknown";
+        let topCount = -1;
+        item.statuses.forEach((count, status) => {
+          if (count > topCount) {
+            topStatus = status;
+            topCount = count;
+          }
+        });
+        if (item.notMailed === 0 && item.mailed > 0) topStatus = "Complete";
+        else if (item.mailed === 0 && item.notMailed > 0) topStatus = "Not started";
+        else if (item.mailed > 0 && item.notMailed > 0 && topStatus === "Unknown") topStatus = "In progress";
+        return {
+          label: item.label,
+          mailed: item.mailed,
+          notMailed: item.notMailed,
+          total: item.total,
+          mailedRate,
+          status: topStatus
+        };
+      });
+    }
+
+    function getFilteredMailingRows() {
+      let rows = aggregateMailingByDimension(state.mailingRows || [], state.dimension);
+      const search = (state.search || "").toLowerCase();
+      if (search) rows = rows.filter(r => String(r.label || "").toLowerCase().includes(search));
+      rows.sort((a, b) => b.mailed - a.mailed || compareGeoLabels(a, b, state.dimension, "asc"));
+      return rows;
     }
 
     function isAppliedRow(row) {
@@ -1919,6 +2111,30 @@
       }
     });
 
+    const mailingStatusCtx = document.getElementById("mailingStatusChart").getContext("2d");
+    const mailingStatusChart = new Chart(mailingStatusCtx, {
+      type:"bar",
+      data:{
+        labels:[],
+        datasets:[
+          { label:"Mailed", data:[], backgroundColor:"#8d0d0d", borderRadius:8 },
+          { label:"Not Mailed", data:[], backgroundColor:"#cf8f7f", borderRadius:8 }
+        ]
+      },
+      options:{
+        indexAxis:"y",
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:true, position:"top", labels:{ usePointStyle:true, boxWidth:10, color:"#4a4a4a" }},
+          tooltip:{ callbacks:{ label:(context) => `${context.dataset.label}: ${formatNum(context.raw)}` } }
+        },
+        scales:{
+          x:{ stacked:true, beginAtZero:true, ticks:{ color:"#555", callback:(value) => formatNum(value) }, grid:{ color:"#eee7e3" }},
+          y:{ stacked:true, ticks:{ color:"#555", autoSkip:false }, grid:{ display:false }}
+        }
+      }
+    });
+
     const rowPiePopup = document.getElementById("rowPiePopup");
     const rowPiePopupTitle = document.getElementById("rowPiePopupTitle");
     const rowPiePopupSubtitle = document.getElementById("rowPiePopupSubtitle");
@@ -2311,6 +2527,70 @@
       }).join("");
     }
 
+    function updateMailingStatusSection() {
+      const rows = getFilteredMailingRows();
+      const labelEl = document.getElementById("mailingAreasLabel");
+      const valueEl = document.getElementById("mailingAreasValue");
+      const mailedEl = document.getElementById("mailingMailedTotal");
+      const notMailedEl = document.getElementById("mailingNotMailedTotal");
+      const rateEl = document.getElementById("mailingMailedRate");
+      const footEl = document.getElementById("mailingStatusFoot");
+      const firstColEl = document.getElementById("mailingFirstColHeader");
+      const tbody = document.querySelector("#mailingStatusTable tbody");
+
+      if (labelEl) labelEl.textContent = dimensionMeta[state.dimension]?.groupLabel || "Areas Reporting";
+      if (firstColEl) firstColEl.textContent = dimensionMeta[state.dimension]?.label || "Area";
+
+      if (!state.mailingRows.length) {
+        if (valueEl) valueEl.textContent = "—";
+        if (mailedEl) mailedEl.textContent = "—";
+        if (notMailedEl) notMailedEl.textContent = "—";
+        if (rateEl) rateEl.textContent = "—";
+        if (footEl) footEl.textContent = "Upload MailingStatus.csv in the same GitHub folder to display ballot mailing status.";
+        mailingStatusChart.data.labels = [];
+        mailingStatusChart.data.datasets[0].data = [];
+        mailingStatusChart.data.datasets[1].data = [];
+        mailingStatusChart.update();
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="padding:18px 16px; color:#666;">No mailing status file is loaded.</td></tr>`;
+        return;
+      }
+
+      const mailedTotal = rows.reduce((sum, row) => sum + Number(row.mailed || 0), 0);
+      const notMailedTotal = rows.reduce((sum, row) => sum + Number(row.notMailed || 0), 0);
+      const total = mailedTotal + notMailedTotal;
+      const mailedRate = total ? ((mailedTotal / total) * 100).toFixed(1) + "%" : "0.0%";
+      const completeCount = rows.filter(row => row.notMailed === 0 && row.mailed > 0).length;
+
+      if (valueEl) valueEl.textContent = formatNum(rows.length);
+      if (mailedEl) mailedEl.textContent = formatNum(mailedTotal);
+      if (notMailedEl) notMailedEl.textContent = formatNum(notMailedTotal);
+      if (rateEl) rateEl.textContent = mailedRate;
+
+      const chartRows = rows.slice(0, 15);
+      mailingStatusChart.data.labels = chartRows.map(row => row.label);
+      mailingStatusChart.data.datasets[0].data = chartRows.map(row => row.mailed);
+      mailingStatusChart.data.datasets[1].data = chartRows.map(row => row.notMailed);
+      mailingStatusChart.update();
+
+      if (tbody) {
+        tbody.innerHTML = rows.length ? rows.map(row => `
+          <tr>
+            <td>${row.label}</td>
+            <td class="num">${formatNum(row.mailed)}</td>
+            <td class="num">${formatNum(row.notMailed)}</td>
+            <td class="num">${row.mailedRate.toFixed(1)}%</td>
+            <td><span class="status-pill ${mailingStatusClass(row.status)}">${row.status}</span></td>
+          </tr>`).join("") : `<tr><td colspan="5" style="padding:18px 16px; color:#666;">No mailing rows match the current search.</td></tr>`;
+      }
+
+      if (footEl) {
+        const modifiedText = state.mailingLastModified ? ` Last updated: ${safeDateText(state.mailingLastModified)}.` : "";
+        footEl.textContent = rows.length
+          ? `${formatNum(completeCount)} ${dimensionMeta[state.dimension]?.groupLabel?.toLowerCase() || "areas"} are fully mailed in the current view.${modifiedText}`
+          : `No mailing rows match the current view.${modifiedText}`;
+      }
+    }
+
     function refreshView() {
       hideRowPiePopup();
       updateHeaderText();
@@ -2325,6 +2605,7 @@
       updateInsightSentence(allRows);
       updateHeatLegend();
       updatePrintReportMeta(allRows);
+      updateMailingStatusSection();
 
       const chartRows = allRows.slice(0, state.limit);
       mainChart.data.labels = chartRows.map(r => r.label);
@@ -2469,6 +2750,19 @@
       }
     }
 
+    async function loadMailingWorkbook() {
+      try {
+        const response = await fetch(MAILING_STATUS_FILE_URL, { method:"GET", cache:"no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        state.mailingLastModified = response.headers.get("Last-Modified") || "";
+        const arrayBuffer = await response.arrayBuffer();
+        state.mailingRows = parseMailingArrayBuffer(arrayBuffer);
+      } catch (error) {
+        state.mailingRows = [];
+        state.mailingLastModified = "";
+      }
+    }
+
     async function loadHostedWorkbook() {
       try {
         showLoading(true);
@@ -2480,7 +2774,7 @@
         const rows = parseWorkbookArrayBuffer(arrayBuffer);
         if (!rows.length) throw new Error("No usable rows found in data file.");
         state.rawRows = rows;
-        await loadPreviousWorkbook();
+        await Promise.all([loadPreviousWorkbook(), loadMailingWorkbook()]);
         refreshView();
         if (state.currentLastModified) {
           const date = new Date(state.currentLastModified);

@@ -1084,11 +1084,11 @@
           <table id="mailingStatusTable" style="min-width:520px;">
             <thead>
               <tr>
-                <th id="mailingFirstColHeader">County</th>
-                <th class="num">Mailed</th>
-                <th class="num">Not Mailed</th>
-                <th class="num">Mailed %</th>
-                <th>Status</th>
+                <th id="mailingFirstColHeader" class="sortable" data-mailing-sort-key="label">County</th>
+                <th class="num sortable" data-mailing-sort-key="mailed">Mailed</th>
+                <th class="num sortable" data-mailing-sort-key="notMailed">Not Mailed</th>
+                <th class="num sortable" data-mailing-sort-key="mailedRate">Mailed %</th>
+                <th class="sortable" data-mailing-sort-key="status">Status</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -1511,12 +1511,61 @@
       });
     }
 
+    function compareMailingRows(a, b, key, dir) {
+      const mailingDimension = state.mailingDimension || "County";
+      const mult = dir === "desc" ? -1 : 1;
+      const geoFallback = () => compareGeoLabels(a, b, mailingDimension, dir === "desc" ? "desc" : "asc");
+
+      if (key === "label") return compareGeoLabels(a, b, mailingDimension, dir === "desc" ? "desc" : "asc");
+      if (key === "status") {
+        const order = { "Not started": 0, "In progress": 1, "Complete": 2 };
+        const av = order[String(a.status || "")] ?? -1;
+        const bv = order[String(b.status || "")] ?? -1;
+        if (av === bv) return geoFallback();
+        return (av - bv) * mult;
+      }
+
+      const av = Number(a[key] || 0);
+      const bv = Number(b[key] || 0);
+      if (av === bv) return geoFallback();
+      return (av - bv) * mult;
+    }
+
+    function updateMailingHeaderSortIndicators() {
+      const headers = document.querySelectorAll('#mailingStatusTable thead th[data-mailing-sort-key]');
+      headers.forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (th.dataset.mailingSortKey === state.mailingSortKey) {
+          th.classList.add(state.mailingSortDir === 'desc' ? 'sort-desc' : 'sort-asc');
+        }
+      });
+    }
+
+    function attachMailingSortableHeadersOnce() {
+      const headers = document.querySelectorAll('#mailingStatusTable thead th[data-mailing-sort-key]');
+      headers.forEach(th => {
+        if (th.dataset.boundMailingClick === '1') return;
+        th.dataset.boundMailingClick = '1';
+        th.addEventListener('click', () => {
+          const key = th.dataset.mailingSortKey || 'label';
+          if (state.mailingSortKey === key) {
+            state.mailingSortDir = state.mailingSortDir === 'asc' ? 'desc' : 'asc';
+          } else {
+            state.mailingSortKey = key;
+            state.mailingSortDir = key === 'label' || key === 'status' ? 'asc' : 'desc';
+          }
+          updateMailingStatusSection();
+        });
+      });
+      updateMailingHeaderSortIndicators();
+    }
+
     function getFilteredMailingRows() {
       const mailingDimension = state.mailingDimension || "County";
       let rows = aggregateMailingByDimension(state.mailingRows || [], mailingDimension);
       const search = (state.search || "").toLowerCase();
       if (search) rows = rows.filter(r => String(r.label || "").toLowerCase().includes(search));
-      rows.sort((a, b) => b.mailed - a.mailed || compareGeoLabels(a, b, mailingDimension, "asc"));
+      rows.sort((a, b) => compareMailingRows(a, b, state.mailingSortKey || 'mailed', state.mailingSortDir || 'desc'));
       return rows;
     }
 
@@ -2538,6 +2587,8 @@
     }
 
     function updateMailingStatusSection() {
+      attachMailingSortableHeadersOnce();
+      updateMailingHeaderSortIndicators();
       const rows = getFilteredMailingRows();
       const labelEl = document.getElementById("mailingAreasLabel");
       const valueEl = document.getElementById("mailingAreasValue");

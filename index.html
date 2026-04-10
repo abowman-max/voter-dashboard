@@ -1102,6 +1102,11 @@
         </div>
       </section>
 
+      <div class="mailing-started-list">
+        <div class="mailing-started-list-title">New Areas That Started Mailing Today</div>
+        <div class="mailing-started-list-text" id="mailingStartedSinceYesterday">Loading…</div>
+      </div>
+
       <div class="mailing-layout">
         <div>
           <div class="mini-chart" style="height:300px;">
@@ -2727,7 +2732,7 @@
         if (trendCompleteEl) trendCompleteEl.textContent = "—";
         if (trendStartedEl) trendStartedEl.textContent = "—";
         if (footEl) footEl.textContent = "Upload MailingStatus.csv in the same GitHub folder to display ballot mailing status.";
-        if (startedSinceYesterdayEl) startedSinceYesterdayEl.textContent = "Started Mailing Since Yesterday: —";
+        if (startedSinceYesterdayEl) startedSinceYesterdayEl.textContent = "No previous mailing file loaded yet.";
         mailingStatusChart.data.labels = [];
         mailingStatusChart.data.datasets[0].data = [];
         mailingStatusChart.data.datasets[1].data = [];
@@ -2741,7 +2746,7 @@
       const total = mailedTotal + notMailedTotal;
       const mailedRate = total ? (mailedTotal / total) * 100 : 0;
       const completeCount = rows.filter(row => row.status === "Complete").length;
-      const trends = computeMailingTrends(state.mailingRows || [], state.previousMailingRows || [], mailingDimension, state.search || "");
+      const trends = computeMailingTrends(state.mailingRows || [], state.previousMailingRows || [], mailingDimension, "");
 
       if (valueEl) valueEl.textContent = formatNum(rows.length);
       if (mailedEl) mailedEl.textContent = formatNum(mailedTotal);
@@ -2759,11 +2764,11 @@
       if (trendStartedEl) trendStartedEl.textContent = trends.hasPrevious ? formatNum(trends.newlyStarted) : "—";
       if (startedSinceYesterdayEl) {
         if (!trends.hasPrevious) {
-          startedSinceYesterdayEl.textContent = "Started Mailing Since Yesterday: Add PreviousMailingStatus.csv to display this list.";
+          startedSinceYesterdayEl.textContent = "Add PreviousMailingStatus.csv to display newly started areas.";
         } else if (!trends.startedLabels || !trends.startedLabels.length) {
-          startedSinceYesterdayEl.textContent = "Started Mailing Since Yesterday: None";
+          startedSinceYesterdayEl.textContent = `No new ${dimensionMeta[mailingDimension]?.groupLabel?.toLowerCase() || "areas"} started mailing today.`;
         } else {
-          startedSinceYesterdayEl.textContent = `Started Mailing Since Yesterday: ${trends.startedLabels.join(", ")}`;
+          startedSinceYesterdayEl.textContent = trends.startedLabels.join(", ");
         }
       }
 

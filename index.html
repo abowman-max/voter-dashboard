@@ -904,10 +904,7 @@
             <div style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;">Current data file</div>
             <div id="currentDataFileStatus" style="font-size:14px; color:var(--ink);">Loading…</div>
           </div>
-          <div>
-            <div style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;">Previous data file</div>
-            <div id="previousDataFileStatus" style="font-size:14px; color:var(--ink);">Loading…</div>
-          </div>
+
         </div>
       </div>
     </section>
@@ -1592,6 +1589,7 @@
       let newlyComplete = 0;
       let newlyStarted = 0;
       let biggestGain = null;
+      const startedLabels = [];
 
       current.forEach(row => {
         const prev = previousMap.get(row.label) || { mailed:0, notMailed:0, total:0, mailedRate:0, status:"Not started" };
@@ -1600,9 +1598,13 @@
           biggestGain = { label: row.label, delta: mailedDelta };
         }
         if (row.status === "Complete" && prev.status !== "Complete") newlyComplete += 1;
-        if (Number(row.mailedRate || 0) >= 2 && Number(prev.mailedRate || 0) < 2) newlyStarted += 1;
+        if (Number(row.mailedRate || 0) >= 2 && Number(prev.mailedRate || 0) < 2) {
+          newlyStarted += 1;
+          startedLabels.push(String(row.label || ""));
+        }
       });
 
+      startedLabels.sort((a, b) => compareGeoLabels({label:a}, {label:b}, dimension, "asc"));
       const currentRate = currentTotals.total ? (currentTotals.mailed / currentTotals.total) * 100 : 0;
       const previousRate = previousTotals.total ? (previousTotals.mailed / previousTotals.total) * 100 : 0;
 
@@ -1612,6 +1614,7 @@
         rateDelta: currentRate - previousRate,
         newlyComplete,
         newlyStarted,
+        startedLabels,
         biggestGain
       };
     }
@@ -2369,8 +2372,8 @@
     }
 
     function updateFileStatus() {
-      document.getElementById("currentDataFileStatus").textContent = state.currentLastModified ? safeDateText(state.currentLastModified) : "Loaded";
-      document.getElementById("previousDataFileStatus").textContent = state.previousLastModified ? safeDateText(state.previousLastModified) : "Not loaded";
+      const currentEl = document.getElementById("currentDataFileStatus");
+      if (currentEl) currentEl.textContent = state.currentLastModified ? safeDateText(state.currentLastModified) : "Loaded";
     }
 
     function updateInsights(rows) {
@@ -2707,6 +2710,7 @@
       const trendRateEl = document.getElementById("mailingTrendRateChange");
       const trendCompleteEl = document.getElementById("mailingTrendNewComplete");
       const trendStartedEl = document.getElementById("mailingTrendNewStarted");
+      const startedSinceYesterdayEl = document.getElementById("mailingStartedSinceYesterday");
 
       const mailingDimension = state.mailingDimension || "County";
 
@@ -2723,6 +2727,7 @@
         if (trendCompleteEl) trendCompleteEl.textContent = "—";
         if (trendStartedEl) trendStartedEl.textContent = "—";
         if (footEl) footEl.textContent = "Upload MailingStatus.csv in the same GitHub folder to display ballot mailing status.";
+        if (startedSinceYesterdayEl) startedSinceYesterdayEl.textContent = "Started Mailing Since Yesterday: —";
         mailingStatusChart.data.labels = [];
         mailingStatusChart.data.datasets[0].data = [];
         mailingStatusChart.data.datasets[1].data = [];
@@ -2752,6 +2757,15 @@
       }
       if (trendCompleteEl) trendCompleteEl.textContent = trends.hasPrevious ? formatNum(trends.newlyComplete) : "—";
       if (trendStartedEl) trendStartedEl.textContent = trends.hasPrevious ? formatNum(trends.newlyStarted) : "—";
+      if (startedSinceYesterdayEl) {
+        if (!trends.hasPrevious) {
+          startedSinceYesterdayEl.textContent = "Started Mailing Since Yesterday: Add PreviousMailingStatus.csv to display this list.";
+        } else if (!trends.startedLabels || !trends.startedLabels.length) {
+          startedSinceYesterdayEl.textContent = "Started Mailing Since Yesterday: None";
+        } else {
+          startedSinceYesterdayEl.textContent = `Started Mailing Since Yesterday: ${trends.startedLabels.join(", ")}`;
+        }
+      }
 
       const chartRows = rows.slice(0, 15);
       mailingStatusChart.data.labels = chartRows.map(row => row.label);

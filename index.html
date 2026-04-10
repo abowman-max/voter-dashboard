@@ -812,6 +812,16 @@
       border-radius:18px;
       background:#fff;
     }
+
+    .mailing-trend-stats {
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:18px;
+      margin:0 0 18px 0;
+    }
+    .trend-change-positive { color:var(--green); }
+    .trend-change-negative { color:var(--red); }
+    .trend-change-neutral { color:var(--muted); }
     .status-pill {
       display:inline-flex;
       align-items:center;
@@ -829,9 +839,11 @@
     @media (max-width:1080px) {
       .mailing-stats { grid-template-columns:repeat(2, 1fr); }
       .mailing-layout { grid-template-columns:1fr; }
+      .mailing-trend-stats { grid-template-columns:repeat(2, 1fr); }
     }
     @media (max-width:760px) {
       .mailing-stats { grid-template-columns:1fr; }
+      .mailing-trend-stats { grid-template-columns:1fr; }
     }
 
 </style>
@@ -1074,6 +1086,25 @@
         </div>
       </section>
 
+      <section class="mailing-trend-stats">
+        <div class="card stat">
+          <div class="label">Daily Mailed Change</div>
+          <div class="value" id="mailingTrendDailyMailed">—</div>
+        </div>
+        <div class="card stat">
+          <div class="label">Rate Change</div>
+          <div class="value" id="mailingTrendRateChange">—</div>
+        </div>
+        <div class="card stat">
+          <div class="label">Newly Complete</div>
+          <div class="value" id="mailingTrendNewComplete">—</div>
+        </div>
+        <div class="card stat">
+          <div class="label">Newly Started</div>
+          <div class="value" id="mailingTrendNewStarted">—</div>
+        </div>
+      </section>
+
       <div class="mailing-layout">
         <div>
           <div class="mini-chart" style="height:300px;">
@@ -1243,6 +1274,7 @@
     const DATA_FILE_URL = "./DataTable.csv";
     const PREVIOUS_DATA_FILE_URL = "./PreviousDataTable.csv";
     const MAILING_STATUS_FILE_URL = "./MailingStatus.csv";
+    const PREVIOUS_MAILING_STATUS_FILE_URL = "./PreviousMailingStatus.csv";
     const PA_COUNTY_GEOJSON_URL = "https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json";
     const PA_CONGRESSIONAL_GEOJSON_URL = "./usc.geojson";
     const PA_HOUSE_GEOJSON_URL = "./sth.geojson";
@@ -1278,7 +1310,11 @@
       previousLastModified: "",
       mailingRows: [],
       mailingLastModified: "",
+      previousMailingRows: [],
+      previousMailingLastModified: "",
       mailingDimension: "County",
+      mailingSortKey: "mailed",
+      mailingSortDir: "desc",
       tableSortKey: "label",
       tableSortDir: "asc"
     };
@@ -1464,6 +1500,25 @@
       return "status-unknown";
     }
 
+    function formatSigned(n) {
+      const num = Number(n || 0);
+      const prefix = num > 0 ? "+" : "";
+      return `${prefix}${formatNum(num)}`;
+    }
+
+    function formatSignedRate(n) {
+      const num = Number(n || 0);
+      const prefix = num > 0 ? "+" : "";
+      return `${prefix}${num.toFixed(1)} pts`;
+    }
+
+    function trendClass(value) {
+      const num = Number(value || 0);
+      if (num > 0) return "trend-change-positive";
+      if (num < 0) return "trend-change-negative";
+      return "trend-change-neutral";
+    }
+
     function aggregateMailingByDimension(rows, dimension) {
       const map = new Map();
       rows.forEach(r => {
@@ -1509,6 +1564,56 @@
           status: topStatus
         };
       });
+    }
+
+    function computeMailingTrends(rows, previousRows, dimension, searchText = "") {
+      const search = String(searchText || "").toLowerCase();
+      let current = aggregateMailingByDimension(rows || [], dimension);
+      let previous = aggregateMailingByDimension(previousRows || [], dimension);
+      if (search) {
+        current = current.filter(r => String(r.label || "").toLowerCase().includes(search));
+        previous = previous.filter(r => String(r.label || "").toLowerCase().includes(search));
+      }
+
+      const previousMap = new Map(previous.map(r => [r.label, r]));
+      const currentTotals = current.reduce((acc, row) => {
+        acc.mailed += Number(row.mailed || 0);
+        acc.notMailed += Number(row.notMailed || 0);
+        acc.total += Number(row.total || 0);
+        return acc;
+      }, { mailed:0, notMailed:0, total:0 });
+      const previousTotals = previous.reduce((acc, row) => {
+        acc.mailed += Number(row.mailed || 0);
+        acc.notMailed += Number(row.notMailed || 0);
+        acc.total += Number(row.total || 0);
+        return acc;
+      }, { mailed:0, notMailed:0, total:0 });
+
+      let newlyComplete = 0;
+      let newlyStarted = 0;
+      let biggestGain = null;
+
+      current.forEach(row => {
+        const prev = previousMap.get(row.label) || { mailed:0, notMailed:0, total:0, mailedRate:0, status:"Not started" };
+        const mailedDelta = Number(row.mailed || 0) - Number(prev.mailed || 0);
+        if (!biggestGain || mailedDelta > biggestGain.delta) {
+          biggestGain = { label: row.label, delta: mailedDelta };
+        }
+        if (row.status === "Complete" && prev.status !== "Complete") newlyComplete += 1;
+        if (Number(row.mailedRate || 0) >= 2 && Number(prev.mailedRate || 0) < 2) newlyStarted += 1;
+      });
+
+      const currentRate = currentTotals.total ? (currentTotals.mailed / currentTotals.total) * 100 : 0;
+      const previousRate = previousTotals.total ? (previousTotals.mailed / previousTotals.total) * 100 : 0;
+
+      return {
+        hasPrevious: previous.length > 0,
+        mailedDelta: currentTotals.mailed - previousTotals.mailed,
+        rateDelta: currentRate - previousRate,
+        newlyComplete,
+        newlyStarted,
+        biggestGain
+      };
     }
 
     function compareMailingRows(a, b, key, dir) {
@@ -2598,6 +2703,10 @@
       const footEl = document.getElementById("mailingStatusFoot");
       const firstColEl = document.getElementById("mailingFirstColHeader");
       const tbody = document.querySelector("#mailingStatusTable tbody");
+      const trendDailyEl = document.getElementById("mailingTrendDailyMailed");
+      const trendRateEl = document.getElementById("mailingTrendRateChange");
+      const trendCompleteEl = document.getElementById("mailingTrendNewComplete");
+      const trendStartedEl = document.getElementById("mailingTrendNewStarted");
 
       const mailingDimension = state.mailingDimension || "County";
 
@@ -2609,6 +2718,10 @@
         if (mailedEl) mailedEl.textContent = "—";
         if (notMailedEl) notMailedEl.textContent = "—";
         if (rateEl) rateEl.textContent = "—";
+        if (trendDailyEl) { trendDailyEl.textContent = "—"; trendDailyEl.className = "value"; }
+        if (trendRateEl) { trendRateEl.textContent = "—"; trendRateEl.className = "value"; }
+        if (trendCompleteEl) trendCompleteEl.textContent = "—";
+        if (trendStartedEl) trendStartedEl.textContent = "—";
         if (footEl) footEl.textContent = "Upload MailingStatus.csv in the same GitHub folder to display ballot mailing status.";
         mailingStatusChart.data.labels = [];
         mailingStatusChart.data.datasets[0].data = [];
@@ -2621,13 +2734,24 @@
       const mailedTotal = rows.reduce((sum, row) => sum + Number(row.mailed || 0), 0);
       const notMailedTotal = rows.reduce((sum, row) => sum + Number(row.notMailed || 0), 0);
       const total = mailedTotal + notMailedTotal;
-      const mailedRate = total ? ((mailedTotal / total) * 100).toFixed(1) + "%" : "0.0%";
+      const mailedRate = total ? (mailedTotal / total) * 100 : 0;
       const completeCount = rows.filter(row => row.status === "Complete").length;
+      const trends = computeMailingTrends(state.mailingRows || [], state.previousMailingRows || [], mailingDimension, state.search || "");
 
       if (valueEl) valueEl.textContent = formatNum(rows.length);
       if (mailedEl) mailedEl.textContent = formatNum(mailedTotal);
       if (notMailedEl) notMailedEl.textContent = formatNum(notMailedTotal);
-      if (rateEl) rateEl.textContent = mailedRate;
+      if (rateEl) rateEl.textContent = `${mailedRate.toFixed(1)}%`;
+      if (trendDailyEl) {
+        trendDailyEl.textContent = trends.hasPrevious ? formatSigned(trends.mailedDelta) : "—";
+        trendDailyEl.className = `value ${trends.hasPrevious ? trendClass(trends.mailedDelta) : ""}`.trim();
+      }
+      if (trendRateEl) {
+        trendRateEl.textContent = trends.hasPrevious ? formatSignedRate(trends.rateDelta) : "—";
+        trendRateEl.className = `value ${trends.hasPrevious ? trendClass(trends.rateDelta) : ""}`.trim();
+      }
+      if (trendCompleteEl) trendCompleteEl.textContent = trends.hasPrevious ? formatNum(trends.newlyComplete) : "—";
+      if (trendStartedEl) trendStartedEl.textContent = trends.hasPrevious ? formatNum(trends.newlyStarted) : "—";
 
       const chartRows = rows.slice(0, 15);
       mailingStatusChart.data.labels = chartRows.map(row => row.label);
@@ -2638,7 +2762,7 @@
       if (tbody) {
         tbody.innerHTML = rows.length ? rows.map(row => `
           <tr>
-            <td>${row.label}</td>
+            <td>${escapeAttr(row.label)}</td>
             <td class="num">${formatNum(row.mailed)}</td>
             <td class="num">${formatNum(row.notMailed)}</td>
             <td class="num">${row.mailedRate.toFixed(1)}%</td>
@@ -2648,9 +2772,15 @@
 
       if (footEl) {
         const modifiedText = state.mailingLastModified ? ` Last updated: ${safeDateText(state.mailingLastModified)}.` : "";
+        const previousText = trends.hasPrevious && state.previousMailingLastModified
+          ? ` Previous mailing file: ${safeDateText(state.previousMailingLastModified)}.`
+          : (trends.hasPrevious ? " Previous mailing file loaded." : " Add PreviousMailingStatus.csv to show daily trends.");
+        const leaderText = trends.hasPrevious && trends.biggestGain && trends.biggestGain.delta > 0
+          ? ` Biggest mailing gain: ${trends.biggestGain.label} (${formatSigned(trends.biggestGain.delta)}).`
+          : "";
         footEl.textContent = rows.length
-          ? `${formatNum(completeCount)} ${dimensionMeta[mailingDimension]?.groupLabel?.toLowerCase() || "areas"} are fully mailed in the current view.${modifiedText}`
-          : `No mailing rows match the current view.${modifiedText}`;
+          ? `${formatNum(completeCount)} ${dimensionMeta[mailingDimension]?.groupLabel?.toLowerCase() || "areas"} are fully mailed in the current view.${modifiedText}${previousText}${leaderText}`
+          : `No mailing rows match the current view.${modifiedText}${previousText}`;
       }
     }
 
@@ -2817,6 +2947,19 @@
       }
     }
 
+    async function loadPreviousMailingWorkbook() {
+      try {
+        const response = await fetch(PREVIOUS_MAILING_STATUS_FILE_URL, { method:"GET", cache:"no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        state.previousMailingLastModified = response.headers.get("Last-Modified") || "";
+        const arrayBuffer = await response.arrayBuffer();
+        state.previousMailingRows = parseMailingArrayBuffer(arrayBuffer);
+      } catch (error) {
+        state.previousMailingRows = [];
+        state.previousMailingLastModified = "";
+      }
+    }
+
     async function loadMailingWorkbook() {
       try {
         const response = await fetch(MAILING_STATUS_FILE_URL, { method:"GET", cache:"no-store" });
@@ -2841,7 +2984,7 @@
         const rows = parseWorkbookArrayBuffer(arrayBuffer);
         if (!rows.length) throw new Error("No usable rows found in data file.");
         state.rawRows = rows;
-        await Promise.all([loadPreviousWorkbook(), loadMailingWorkbook()]);
+        await Promise.all([loadPreviousWorkbook(), loadMailingWorkbook(), loadPreviousMailingWorkbook()]);
         refreshView();
         if (state.currentLastModified) {
           const date = new Date(state.currentLastModified);
@@ -2860,6 +3003,7 @@
     loadHostedWorkbook();
   
 
+    attachMailingSortableHeadersOnce();
     attachSortableHeadersOnce();
 </script>
 </body>

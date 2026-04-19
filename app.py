@@ -11,7 +11,7 @@ import streamlit as st
 st.set_page_config(page_title="Candidate Connect", layout="wide")
 
 # R2 public-read setup
-R2_BASE = "https://b1017650e855cac9d9605c7f4e9647a1.r2.cloudflarestorage.com"
+R2_BASE = "https://pub-a9e33b718082407cbd85e7b86b0fcb5c.r2.dev"
 R2_BUCKET = "candidate-connect-data"
 
 LOCAL_ROOT = Path("/tmp/candidate_connect_r2")

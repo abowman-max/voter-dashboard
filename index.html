@@ -846,6 +846,36 @@
       .mailing-trend-stats { grid-template-columns:1fr; }
     }
 
+
+    /* Keep the detail table inside the visible dashboard width. */
+    #detailTable {
+      min-width:0 !important;
+      table-layout:fixed;
+      width:100%;
+    }
+    #detailTable th,
+    #detailTable td {
+      padding:9px 8px;
+      font-size:13px;
+      white-space:normal !important;
+      word-break:normal;
+      overflow-wrap:anywhere;
+    }
+    #detailTable th:first-child,
+    #detailTable td:first-child {
+      width:18%;
+    }
+    #detailTable th:not(:first-child),
+    #detailTable td:not(:first-child) {
+      width:10.25%;
+    }
+    #detailTable .performer-badge,
+    #detailTable .growth-badge {
+      margin-left:4px;
+      padding:2px 5px;
+      font-size:9px;
+    }
+
 </style>
 
 
@@ -1222,8 +1252,6 @@
           <button id="stackedBtn" class="active" type="button">Stacked</button>
           <button id="groupedBtn" type="button">Grouped</button>
         </div>
-        <button id="downloadFilteredCsvBtn" class="download-btn" type="button">Download Filtered CSV</button>
-        <button id="printReportBtn" type="button">Generate Client Report PDF</button>
       </div>
       <div class="chart-wrap" style="overflow-x:auto; overflow-y:hidden;">
         <div id="mainChartInner" style="min-width:1200px; height:100%;">
@@ -2456,14 +2484,14 @@
       document.getElementById("groupCountLabel").textContent = meta.groupLabel;
       document.getElementById("groupCountValue").textContent = formatNum(aggregateByDimension(state.rawRows, state.dimension).length);
 
-      document.getElementById("detailColDem").textContent = state.detailTableMode === "returned" ? "Dem Returned" : "Dem Applied";
-      document.querySelectorAll("#detailTable thead th")[2].textContent = state.detailTableMode === "returned" ? "Dem Return Rate" : "Dem %";
-      document.querySelectorAll("#detailTable thead th")[4].textContent = state.detailTableMode === "returned" ? "Other Return Rate" : "Other %";
-      document.querySelectorAll("#detailTable thead th")[6].textContent = state.detailTableMode === "returned" ? "Rep Return Rate" : "Rep %";
-      document.getElementById("detailColOther").textContent = state.detailTableMode === "returned" ? "Other Returned" : "Other Applied";
-      document.getElementById("detailColRep").textContent = state.detailTableMode === "returned" ? "Rep Returned" : "Rep Applied";
-      document.getElementById("detailColTotal").textContent = state.detailTableMode === "returned" ? "Total Returned" : "Total Applied";
-      document.getElementById("detailColTotalRate").textContent = state.detailTableMode === "returned" ? "Total Return Rate" : "Total %";
+      document.getElementById("detailColDem").textContent = state.detailTableMode === "returned" ? "Dem Ret." : "Dem Applied";
+      document.querySelectorAll("#detailTable thead th")[2].textContent = state.detailTableMode === "returned" ? "Dem Rate" : "Dem %";
+      document.querySelectorAll("#detailTable thead th")[4].textContent = state.detailTableMode === "returned" ? "Other Rate" : "Other %";
+      document.querySelectorAll("#detailTable thead th")[6].textContent = state.detailTableMode === "returned" ? "Rep Rate" : "Rep %";
+      document.getElementById("detailColOther").textContent = state.detailTableMode === "returned" ? "Other Ret." : "Other Applied";
+      document.getElementById("detailColRep").textContent = state.detailTableMode === "returned" ? "Rep Ret." : "Rep Applied";
+      document.getElementById("detailColTotal").textContent = state.detailTableMode === "returned" ? "Total Ret." : "Total Applied";
+      document.getElementById("detailColTotalRate").textContent = state.detailTableMode === "returned" ? "Total Rate" : "Total %";
 
       const visibleRows = aggregateByDimension(state.rawRows, state.dimension);
       const appliedSum = visibleRows.reduce((sum, row) => sum + Number(row.appliedTotal || 0), 0);
@@ -2945,8 +2973,10 @@
       state.detailTableMode = "returned";
       refreshView();
     });
-    document.getElementById("downloadFilteredCsvBtn").addEventListener("click", exportFilteredCsv);
-    document.getElementById("printReportBtn").addEventListener("click", () => window.print());
+    const downloadFilteredCsvBtn = document.getElementById("downloadFilteredCsvBtn");
+    if (downloadFilteredCsvBtn) downloadFilteredCsvBtn.addEventListener("click", exportFilteredCsv);
+    const printReportBtn = document.getElementById("printReportBtn");
+    if (printReportBtn) printReportBtn.addEventListener("click", () => window.print());
     document.getElementById("heatMetricSelect").addEventListener("change", () => { updateHeatLegend(); renderHeatMap(); });
     document.getElementById("mailingDimensionSelect").addEventListener("change", (e) => {
       state.mailingDimension = e.target.value;

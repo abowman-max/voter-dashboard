@@ -1,5 +1,5 @@
 ﻿County,Municipality,USC,STS,STH,Mailed,Not Mailed,Mailing Status
-Philadelphia,Philadelphia,3  ,4  ,200  ,7342,8,In Progress
+Philadelphia,Philadelphia,3  ,4  ,200  ,7343,8,In Progress
 Allegheny,Pittsburgh,12  ,43  ,23  ,6093,15,In Progress
 Philadelphia,Philadelphia,3  ,1  ,182  ,5588,6,In Progress
 Erie,Millcreek Twp,16  ,49  ,3  ,5334,2,In Progress
@@ -8,7 +8,7 @@ Bucks,Lower Makefield Twp,1  ,10  ,31  ,4715,1,In Progress
 Delaware,Haverford Twp,5  ,17  ,166  ,4447,0,In Progress
 Bucks,Bensalem Twp,1  ,6  ,18  ,4421,2,In Progress
 Montgomery,Abington Twp,4  ,4  ,153  ,4272,1,In Progress
-Allegheny,Penn Hills,17  ,43  ,32  ,4155,13,In Progress
+Allegheny,Penn Hills,17  ,43  ,32  ,4155,14,In Progress
 Philadelphia,Philadelphia,2  ,1  ,175  ,4008,6,In Progress
 Allegheny,Mt Lebanon,17  ,42  ,42  ,3887,18,In Progress
 Bucks,Middletown Twp,1  ,6  ,142  ,3868,0,In Progress
@@ -31,8 +31,8 @@ Erie,Erie,16  ,49  ,1  ,3144,0,In Progress
 Philadelphia,Philadelphia,3  ,8  ,186  ,3134,8,In Progress
 Philadelphia,Philadelphia,2  ,5  ,170  ,3114,9,In Progress
 Westmoreland,Hempfield Twp,14  ,39  ,57  ,3040,2,In Progress
-Philadelphia,Philadelphia,3  ,1  ,184  ,2996,9,In Progress
-Allegheny,Pittsburgh,12  ,42  ,19  ,2919,9,In Progress
+Philadelphia,Philadelphia,3  ,1  ,184  ,2998,9,In Progress
+Allegheny,Pittsburgh,12  ,42  ,19  ,2920,9,In Progress
 Chester,Tredyffrin Twp,6  ,19  ,157  ,2858,5,In Progress
 Allegheny,Monroeville,12  ,45  ,25  ,2809,7,In Progress
 Northampton,Bethlehem Twsp,7  ,18  ,137  ,2797,8,In Progress
@@ -46,7 +46,7 @@ Westmoreland,Murrysville,12  ,39  ,55  ,2642,23,In Progress
 Bucks,Buckingham Twp,1  ,10  ,29  ,2641,3,In Progress
 Bucks,Doylestown Twp,1  ,10  ,29  ,2636,0,In Progress
 Butler,Cranberry Twp,16  ,47  ,12  ,2621,2,In Progress
-Allegheny,Pittsburgh,12  ,38  ,24  ,2618,9,In Progress
+Allegheny,Pittsburgh,12  ,38  ,24  ,2619,9,In Progress
 Dauphin,Susquehanna Twp,10  ,15  ,105   ,2582,0,In Progress
 Philadelphia,Philadelphia,2  ,5  ,173  ,2556,10,In Progress
 Lancaster,Manheim Twp,11  ,36  ,96  ,2554,2,In Progress
@@ -56,8 +56,8 @@ Bucks,Falls Twp,1  ,10  ,140  ,2481,0,In Progress
 Allegheny,Moon,17  ,37  ,44  ,2440,6,In Progress
 Montgomery,Lower Merion Twp,5  ,17  ,149  ,2421,2,In Progress
 Delaware,Radnor Twp,5  ,17  ,168  ,2418,0,In Progress
-Philadelphia,Philadelphia,3  ,7  ,190  ,2413,2,In Progress
-Philadelphia,Philadelphia,3  ,8  ,188  ,2376,3,In Progress
+Philadelphia,Philadelphia,3  ,7  ,190  ,2415,2,In Progress
+Philadelphia,Philadelphia,3  ,8  ,188  ,2377,3,In Progress
 Allegheny,Pittsburgh,12  ,43  ,24  ,2320,7,In Progress
 Delaware,Upper Darby Twp,5  ,26  ,163  ,2271,0,In Progress
 Allegheny,Pittsburgh,12  ,42  ,27  ,2216,5,In Progress
@@ -100,7 +100,7 @@ Delaware,Springfield Twp,5  ,26  ,165  ,1759,0,In Progress
 Lehigh,Upper Macungie,7  ,16  ,132  ,1747,8,In Progress
 Washington,Peters Twp,14  ,46  ,40  ,1742,9,In Progress
 Delaware,Newtown Twp,5  ,26  ,168  ,1738,0,In Progress
-Philadelphia,Philadelphia,3  ,7  ,10  ,1727,5,In Progress
+Philadelphia,Philadelphia,3  ,7  ,10  ,1728,5,In Progress
 Chester,Uwchlan Twp,6  ,44  ,155  ,1724,3,In Progress
 Cumberland,Upper Allen Twp,10  ,31  ,87  ,1714,0,In Progress
 Chester,West Whiteland Twp,6  ,19  ,167  ,1710,3,In Progress
@@ -1563,51 +1563,51 @@ Columbia,Madison Twp,9  ,27  ,109  ,67,0,In Progress
 Lancaster,Sadsbury Twp,11  ,13  ,100  ,67,0,In Progress
 Chester,Honeybrook Boro,6  ,44  ,74  ,67,0,In Progress
 Crawford,Richmond Twp,16  ,50  ,65  ,67,0,In Progress
-Perry,Tuscarora Twp,13  ,34  ,86  ,67,0,In Progress
 Lycoming,Limestone Twp,15  ,23  ,84  ,67,0,In Progress
 Huntingdon,Smithfield Twp,13  ,30  ,81  ,66,1,In Progress
 Fayette,South Connellsville Boro,14  ,32  ,52  ,66,0,In Progress
-Schuylkill,Ryan Twp,9  ,29  ,124  ,66,0,In Progress
+Northumberland,Upper Augusta Twp,9  ,27  ,108  ,66,0,In Progress
+Perry,Tuscarora Twp,13  ,34  ,86  ,66,0,In Progress
 Delaware,Colwyn Boro,5  ,8  ,185  ,66,0,In Progress
 Lycoming,Upper Fairfield Twp,9  ,23  ,84  ,66,0,In Progress
-Northumberland,Upper Augusta Twp,9  ,27  ,108  ,66,0,In Progress
-Fayette,Upper Tyrone Twp,14  ,32  ,52  ,66,0,In Progress
+Schuylkill,Ryan Twp,9  ,29  ,124  ,66,0,In Progress
 Delaware,Upland Boro,5  ,9  ,161  ,66,0,In Progress
+Fayette,Upper Tyrone Twp,14  ,32  ,52  ,66,0,In Progress
 Susquehanna,Susquehanna Boro,9  ,20  ,111  ,65,1,In Progress
-Bradford,Smithfield Twp,9  ,23  ,68  ,65,0,In Progress
 Indiana,Montgomery,15  ,41  ,66  ,65,0,In Progress
 Adams,Liberty Twp,13  ,33  ,91  ,65,0,In Progress
+Bradford,Smithfield Twp,9  ,23  ,68  ,65,0,In Progress
 Clarion,Beaver Twp,15  ,21  ,63  ,65,0,In Progress
 Bradford,Asylum Twp,9  ,23  ,110  ,64,1,In Progress
 Perry,Liverpool Twp,13  ,34  ,86  ,64,1,In Progress
 Crawford,Oil Creek Twp,16  ,50  ,64  ,64,0,In Progress
-Wyoming,Nicholson Twp,9  ,20  ,110  ,64,0,In Progress
+Susquehanna,Dimock Twp,9  ,20  ,111  ,64,0,In Progress
 Adams,Highland Twp,13  ,33  ,91  ,64,0,In Progress
+Wyoming,Nicholson Twp,9  ,20  ,110  ,64,0,In Progress
 Greene,Perry Twp,14  ,46  ,50  ,64,0,In Progress
 Wayne,Preston Twp,8  ,20  ,111  ,64,0,In Progress
 Snyder,Center Twp,15  ,27  ,85  ,64,0,In Progress
 Luzerne,Fairmount Twp,9  ,20  ,117  ,64,0,In Progress
+York,Glen Rock Boro,11  ,28  ,169  ,64,0,In Progress
 Snyder,Washington Twp,15  ,27  ,85  ,64,0,In Progress
 Luzerne,Dennison Twp,8  ,29  ,117  ,64,0,In Progress
-Susquehanna,Dimock Twp,9  ,20  ,111  ,64,0,In Progress
-York,Glen Rock Boro,11  ,28  ,169  ,64,0,In Progress
 Perry,Juniata Twp,13  ,34  ,86  ,64,0,In Progress
 Beaver,Darlington Twp,17  ,47  ,14  ,63,0,In Progress
+Venango,Irwin Twp,16  ,21  ,64  ,63,0,In Progress
+Cambria,Cresson Boro,13  ,35  ,71  ,63,0,In Progress
 Schuylkill,Tremont Boro,9  ,29  ,107  ,63,0,In Progress
 Lawrence,New Beaver Boro,16  ,47  ,8  ,63,0,In Progress
-York,Wrightsville Boro,11  ,28  ,47  ,63,0,In Progress
-Susquehanna,Jackson Twp,9  ,20  ,111  ,63,0,In Progress
-Cambria,Cresson Boro,13  ,35  ,71  ,63,0,In Progress
-Lebanon,Jonestown Boro,9  ,48  ,102  ,63,0,In Progress
 Bedford,Everett Boro,13  ,32  ,78  ,63,0,In Progress
-Venango,Irwin Twp,16  ,21  ,64  ,63,0,In Progress
+Susquehanna,Jackson Twp,9  ,20  ,111  ,63,0,In Progress
+Lebanon,Jonestown Boro,9  ,48  ,102  ,63,0,In Progress
+York,Wrightsville Boro,11  ,28  ,47  ,63,0,In Progress
 Beaver,West Mayfield Boro,17  ,47  ,14  ,62,1,In Progress
 Armstrong,Freeport Boro,15  ,41  ,60  ,62,1,In Progress
 Blair,Woodbury Twp,13  ,30  ,80  ,62,1,In Progress
 Bradford,Burlington Twp,9  ,23  ,68  ,62,0,In Progress
+Fulton,Ayr Twp,13  ,30  ,78  ,62,0,In Progress
 Mercer,Jackson,16  ,50  ,17  ,62,0,In Progress
 Allegheny,Whitaker,12  ,45  ,35  ,62,0,In Progress
-Fulton,Ayr Twp,13  ,30  ,78  ,62,0,In Progress
 Clearfield,Penn Twp,15  ,35  ,75  ,62,0,In Progress
 Lancaster,Drumore Twp,11  ,13  ,100  ,62,0,In Progress
 Snyder,Franklin Twp,15  ,27  ,85  ,61,1,In Progress
@@ -1620,29 +1620,29 @@ Mckean,Smethport Boro,15  ,25  ,67  ,61,0,In Progress
 Perry,Greenwood Twp,13  ,34  ,86  ,61,0,In Progress
 Wayne,Hawley Boro,8  ,20  ,139  ,61,0,In Progress
 Allegheny,Lincoln,12  ,45  ,35  ,61,0,In Progress
-Mckean,Eldred Twp,15  ,25  ,67  ,60,1,In Progress
 Somerset,Lincoln Twp,14  ,32  ,69  ,60,1,In Progress
+Mckean,Eldred Twp,15  ,25  ,67  ,60,1,In Progress
 Berks,Perry Twp,4  ,48  ,5  ,60,1,In Progress
 Chester,Highland Twp,6  ,19  ,13  ,60,1,In Progress
 Susquehanna,Gibson Twp,9  ,20  ,111  ,60,0,In Progress
-Mercer,Wilmington,16  ,50  ,17  ,60,0,In Progress
+Somerset,Milford Twp,14  ,32  ,69  ,60,0,In Progress
 Beaver,Freedom Boro,17  ,47  ,16  ,60,0,In Progress
 Westmoreland,St Clair Twp,14  ,41  ,59  ,60,0,In Progress
-Butler,Marion Twp,16  ,21  ,17  ,60,0,In Progress
 Columbia,Locust Twp,9  ,27  ,109  ,60,0,In Progress
+Butler,Marion Twp,16  ,21  ,17  ,60,0,In Progress
 Erie,Amity Twp,16  ,49  ,4  ,60,0,In Progress
-Somerset,Milford Twp,14  ,32  ,69  ,60,0,In Progress
+Mercer,Wilmington,16  ,50  ,17  ,60,0,In Progress
 Lawrence,Ellport Boro,16  ,47  ,8  ,60,0,In Progress
 Clarion,Washington Twp,15  ,21  ,63  ,60,0,In Progress
 Allegheny,Leetsdale,17  ,37  ,44  ,59,1,In Progress
-Northumberland,Rockefeller Twp,9  ,27  ,108  ,59,1,In Progress
 Allegheny,Heidelberg,17  ,37  ,27  ,59,1,In Progress
+Northumberland,Rockefeller Twp,9  ,27  ,108  ,59,1,In Progress
 Carbon,Packer Twp,7  ,29  ,122  ,59,0,In Progress
-Mercer,Findley,16  ,50  ,17  ,59,0,In Progress
-Wyoming,Northmoreland Twp,9  ,20  ,110  ,59,0,In Progress
 Allegheny,Neville,17  ,42  ,45  ,59,0,In Progress
-Washington,Burgettstown Boro,14  ,46  ,15  ,59,0,In Progress
+Wyoming,Northmoreland Twp,9  ,20  ,110  ,59,0,In Progress
 Erie,Waterford Boro,16  ,49  ,4  ,59,0,In Progress
+Washington,Burgettstown Boro,14  ,46  ,15  ,59,0,In Progress
+Mercer,Findley,16  ,50  ,17  ,59,0,In Progress
 Somerset,Elk Lick Twp,14  ,32  ,69  ,59,0,In Progress
 Clinton,Flemington Boro,15  ,25  ,76  ,59,0,In Progress
 Cumberland,North Newton Twp,13  ,34  ,199  ,58,1,In Progress
